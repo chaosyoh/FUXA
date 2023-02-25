@@ -11,6 +11,34 @@
     background-color: violet;
 }
 
+.browser-result {
+    height: 240px;
+    border: 1px solid var(--formBorder);
+    padding: 5px 5px 3px 8px;
+    overflow: auto;
+
+    .browser-item:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+}
+
+.select-tool {
+    margin-top: 10px;
+    display: block;
+
+    .select-item {
+        display:inline-block;
+        margin-right: 10px;
+
+        input {
+            width: 300px;
+        }
+    }
+    .add-payload {
+        margin-right: 20px;;
+    }
+}
+
 .topic-text {
     width: 250px;
     display: inline-block;
@@ -86,7 +114,7 @@
     width: 100%;
 }
 
-.mytoggle-group {
+.toggle-group {
     height: 29px;
     align-items: center;
   }
