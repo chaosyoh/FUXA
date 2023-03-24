@@ -3,35 +3,34 @@
     top: 35px;
     bottom: 0px;
     overflow: auto;
+    width: 340px;
 }
 
 .section-item {
     width: 100%;
 }
 
-.section-item-block mat-select, span {
-    width:calc(100% - 15px);
+.field-block {
+    width: 100%;
+    mat-select, input, span {
+        width:calc(100% - 15px);
+    }
 }
 
-.section-inline-text {
-    display: inline-block;
-}
-
-.section-inline-text input {
+.field-text input {
     width: 70px;
 }
 
-.section-inline-number {
-    display: inline-block;
+.field-number {
     width: 60px;
 }
 
-.section-inline-number input {
+.field-number input {
     width: inherit;
     text-align: center;
 }
 
-.section-inline-number span {
+.field-number span {
     width: 65px;
     text-align: left;
 }
