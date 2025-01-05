@@ -47,7 +47,9 @@
     "socket.io": "2.5.0",
     "sqlite3": "5.1.5",
     "winston": "3.7.2",
-    "ws": "8.18.0"
+    "ws": "8.18.0",
+    "node-snap7": "1.0.7",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@mapbox/node-pre-gyp": "^1.0.0",

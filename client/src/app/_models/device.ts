@@ -554,7 +554,11 @@ export class DevicesUtils {
             throw new Error(`Format Error: ${items.length}/${tagKeyLength} ${line}`);
         }
         const deviceId = items[1];
-        let tag = new Tag(items[2]);
+        let tagId = items[2];
+        if (!tagId) {
+            tagId = Utils.getGUID(TAG_PREFIX);
+        }
+        let tag = new Tag(tagId);
         tag.name = items[3].replace(new RegExp(DevicesUtils.columnMaske, 'g'), DevicesUtils.columnDelimiter);
         tag.label = items[4].replace(new RegExp(DevicesUtils.columnMaske, 'g'), DevicesUtils.columnDelimiter);
         tag.type = items[5];

@@ -165,6 +165,12 @@
                                     <input [(ngModel)]="settings.daqstore.credentials.password" placeholder="taosdata" class="input-row" type="text">
                                 </div>
                             </div>
+                            <div *ngSwitchCase="daqstoreType.QuestDB">
+                                <div class="my-form-field block mt15 w100">
+                                    <span>{{'dlg.app-settings-daqstore-url' | translate}}</span>
+                                    <input [(ngModel)]="settings.daqstore.url" placeholder="http://localhost:9000" class="input-row" type="text">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -97,6 +97,7 @@ export enum DaqStoreType {
     influxDB = 'influxDB',
     influxDB18 = 'influxDB 1.8',
     TDengine = 'TDengine' ,
+    QuestDB = 'QuestDB'
 }
 
 export enum influxDBVersionType {
