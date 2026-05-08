@@ -181,7 +181,11 @@ function setProjectData(cmd, value) {
             if (cmd === ProjectDataCmdType.SetView) {
                 section.table = prjstorage.TableType.VIEWS;
                 section.name = value.id;
-                setView(value);
+                if (!setView(value)) {
+                    logger.warn(`project.set-view skipped duplicate view name '${value.name}' with id '${value.id}'`);
+                    resolve(true);
+                    return;
+                }
             } else if (cmd === ProjectDataCmdType.DelView) {
                 section.table = prjstorage.TableType.VIEWS;
                 section.name = value.id;
@@ -293,16 +297,22 @@ function setProjectData(cmd, value) {
  */
 function setView(view) {
     var pos = -1;
+    var sameNamePos = -1;
     for (var i = 0; i < data.hmi.views.length; i++) {
         if (data.hmi.views[i].id === view.id) {
             pos = i;
+        } else if (data.hmi.views[i].name === view.name) {
+            sameNamePos = i;
         }
     }
     if (pos >= 0) {
         data.hmi.views[pos] = view;
+    } else if (sameNamePos >= 0) {
+        return false;
     } else {
         data.hmi.views.push(view);
     }
+    return true;
 }
 
 /**
