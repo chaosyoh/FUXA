@@ -496,6 +496,17 @@ app-root {
   opacity: 1;
 }
 
+/* Override browser autofill styling to preserve theme colors (login form only) */
+.my-form-field input:-webkit-autofill,
+.my-form-field input:-webkit-autofill:hover,
+.my-form-field input:-webkit-autofill:focus,
+.my-form-field input:-webkit-autofill:active {
+    -webkit-transition: background-color 5000s ease-in-out 0s;
+    transition: background-color 5000s ease-in-out 0s;
+    -webkit-text-fill-color: var(--formInputColor, #000) !important;
+    caret-color: var(--formInputColor, #000) !important;
+}
+
 .my-form-field input,
 .my-form-field textarea {
   padding: 5px 2px 6px 3px;
@@ -936,6 +947,24 @@ mat-toolbar-row {
     bottom: 2px;
     right: 4px;
     position: absolute;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.54);
+    font-size: 20px;
+}
+
+.show-password:hover {
+    color: rgba(0, 0, 0, 0.87);
+}
+
+/* Dark theme: .dark-theme is on body, overlay is child of body */
+body.dark-theme .show-password,
+.dark-theme .show-password {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+body.dark-theme .show-password:hover,
+.dark-theme .show-password:hover {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Color picker */

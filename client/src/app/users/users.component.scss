@@ -114,6 +114,12 @@
         bottom: 2px;
         right: 8px;
         position: absolute;
+        cursor: pointer;
+        color: rgba(0, 0, 0, 0.54);
+
+        &:hover {
+            color: rgba(0, 0, 0, 0.87);
+        }
     }
 
     .my-header-filter ::ng-deep .mat-sort-header-button {

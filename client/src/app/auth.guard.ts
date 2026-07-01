@@ -40,7 +40,11 @@ export class AuthGuard  {
                 if (!secureEnabled) {
                     return of(true);
                 } else {
-                    const dialogRef = this.dialog.open(LoginComponent);
+                    const dialogRef = this.dialog.open(LoginComponent, {
+                        disableClose: true,
+                        autoFocus: false,
+                        panelClass: document.body.classList.contains('dark-theme') ? 'dark-theme' : ''
+                    });
                     return dialogRef.afterClosed().pipe(
                         mergeMap(result => {
                             if (result) {

@@ -312,6 +312,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
                 data: {},
                 disableClose: true,
                 autoFocus: false,
+                panelClass: document.body.classList.contains('dark-theme') ? 'dark-theme' : '',
                 ...(this.hmi.layout.loginoverlaycolor && this.hmi.layout.loginoverlaycolor !== LoginOverlayColorType.none) && {
                     backdropClass: this.hmi.layout.loginoverlaycolor === LoginOverlayColorType.black ? 'backdrop-black' : 'backdrop-white'
                 }
