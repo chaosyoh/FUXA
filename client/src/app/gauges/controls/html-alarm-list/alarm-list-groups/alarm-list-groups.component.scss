@@ -1,0 +1,41 @@
+:host {
+    .dialog-title {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .dialog-close-btn {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        cursor: pointer;
+        font-size: 20px;
+        color: #999;
+    }
+
+    .groups-toolbar {
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 8px;
+    }
+
+    .groups-list {
+        max-height: 300px;
+        overflow-y: auto;
+
+        .group-item {
+            padding: 4px 0;
+        }
+    }
+
+    .no-groups {
+        color: #999;
+        font-style: italic;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .mr5 {
+        margin-right: 5px;
+    }
+}

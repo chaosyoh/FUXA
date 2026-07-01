@@ -1,0 +1,76 @@
+ [
+        {
+            "highhigh": {
+                "min": 1,
+                "max": 10,
+                "enabled": true,
+                "text": "触发报警",
+                "ackmode": "ackactive",
+                "bkcolor": "#FF4848",
+                "color": "#FFF"
+            },
+            "high": {
+                "enabled": false,
+                "ackmode": "ackactive",
+                "bkcolor": "#F9CF59",
+                "color": "#000"
+            },
+            "low": {
+                "enabled": false,
+                "ackmode": "ackactive",
+                "bkcolor": "#ffff00ff",
+                "color": "#000"
+            },
+            "info": {
+                "enabled": false,
+                "ackmode": "float",
+                "bkcolor": "#22A7F2",
+                "color": "#FFF"
+            },
+            "actions": {
+                "enabled": false,
+                "values": []
+            },
+            "property": {
+                "variableId": "t_1185bda5-284546fe"
+            },
+            "name": "报警1"
+        },
+        {
+            "highhigh": {
+                "min": 0,
+                "max": 0,
+                "enabled": false,
+                "text": "触发报警",
+                "ackmode": "ackactive",
+                "bkcolor": "#FF4848",
+                "color": "#FFF"
+            },
+            "high": {
+                "enabled": false,
+                "ackmode": "ackactive",
+                "bkcolor": "#F9CF59",
+                "color": "#000"
+            },
+            "low": {
+                "enabled": false,
+                "ackmode": "ackactive",
+                "bkcolor": "#ffff00ff",
+                "color": "#000"
+            },
+            "info": {
+                "enabled": false,
+                "ackmode": "float",
+                "bkcolor": "#22A7F2",
+                "color": "#FFF"
+            },
+            "actions": {
+                "enabled": false,
+                "values": []
+            },
+            "property": {
+                "variableId": "t_09abc4c2-2a6c4d01"
+            },
+            "name": "报警2"
+        }
+    ]

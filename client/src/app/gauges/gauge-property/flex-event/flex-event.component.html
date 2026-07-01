@@ -1,0 +1,294 @@
+<div *ngFor="let item of events; index as i" class="item">
+    <div class="item-remove">
+        <button mat-icon-button (click)="onRemoveEvent(i)" class="remove">
+            <mat-icon>clear</mat-icon>
+        </button>
+    </div>
+    <div class="inbk" style="vertical-align: top;">
+        <div class="my-form-field" style="width: 140px;">
+            <span>{{'gauges.property-event-type' | translate}}</span>
+            <mat-select [(value)]="item.type">
+                <mat-option *ngFor="let ev of eventType | enumToArray" [value]="ev.key">
+                    {{ ev.value }}
+                </mat-option>
+            </mat-select>
+        </div>
+        <div class="my-form-field ml15" style="width: 140px;">
+            <span>{{'gauges.property-event-action' | translate}}</span>
+            <mat-select [(value)]="item.action" (change)="onActionChange(item);">
+                <ng-container *ngIf="!isEnterOrSelect(item.type); else enterOrSelectAction">
+                    <mat-option *ngFor="let type of actionType | enumToArray" [value]="type.key">
+                        {{ type.value }}
+                    </mat-option>
+                </ng-container>
+                <ng-template #enterOrSelectAction>
+                    <mat-option *ngFor="let type of enterActionType | enumToArray" [value]="type.key">
+                        {{ type.value }}
+                    </mat-option>
+                </ng-template>
+            </mat-select>
+        </div>
+    </div>
+    <div class="my-form-field" style="width: 280px;padding-left: 20px" *ngIf="withDestination(item.action)">
+        <ng-container *ngIf="isWithPanel(item.action); else destination" class="inbk" style="vertical-align: top;">
+            <div class="my-form-field block" style="width: 240px;">
+                <span>{{'gauges.property-event-destination-panel' | translate}}</span>
+                <mat-select [(value)]="item.actoptions.panelId">
+                    <mat-option *ngFor="let panel of viewPanels; index as i" [value]="panel.id">{{panel.name}}</mat-option>
+                </mat-select>
+            </div>
+            <div class="my-form-field block mt5" style="width: 240px;">
+                <span>{{'gauges.property-event-destination' | translate}}</span>
+                <mat-select [(value)]="item.actparam">
+                    <mat-option *ngFor="let v of views; index as i" [value]="v.id">{{v.name}}</mat-option>
+                </mat-select>
+            </div>
+        </ng-container>
+        <ng-template #destination>
+            <div class="my-form-field lbk" style="width: 240px;">
+                <span>{{'gauges.property-event-destination' | translate}}</span>
+                <mat-select [(value)]="item.actparam">
+                    <mat-option *ngFor="let v of views; index as i" [value]="v.id">{{v.name}}</mat-option>
+                </mat-select>
+            </div>
+        </ng-template>
+        <div *ngIf="withPosition(item.action)" class="table mt8">
+            <div class="my-form-field lbk" style="width: 240px">
+                <span>{{'gauges.property-event-position-type' | translate}}</span>
+                <mat-select [(value)]="item.actoptions.positionType">
+                    <mat-option value="fixed">{{'gauges.property-event-position-fixed' | translate}}</mat-option>
+                    <mat-option value="custom">{{'gauges.property-event-position-custom' | translate}}</mat-option>
+                </mat-select>
+            </div>
+            <ng-container *ngIf="item.actoptions.positionType === 'custom'">
+                <div class="my-form-field lbk mt5">
+                    <span>{{'general-x' | translate}}</span>
+                    <input numberOnly [(ngModel)]="item.actoptions.left" type="number" style="width: 60px">
+                </div>
+                <div class="my-form-field lbk ml10 mt5">
+                    <span>{{'general-y' | translate}}</span>
+                    <input numberOnly [(ngModel)]="item.actoptions.top" type="number" style="width: 60px">
+                </div>
+                <div class="my-form-field lbk mt5" style="width: 240px">
+                    <span>{{'gauges.property-event-destination-relative-from' | translate}}</span>
+                    <mat-select [(value)]="item.actoptions.relativeFrom">
+                        <mat-option *ngFor="let rf of relativeFromType | enumToArray" [value]="rf.key">
+                            {{ 'shapes.event-relativefrom-' + rf.value | translate }}
+                        </mat-option>
+                    </mat-select>
+                </div>
+            </ng-container>
+            <ng-container *ngIf="item.actoptions.positionType !== 'custom'">
+                <div class="my-form-field lbk mt5" style="width: 120px">
+                    <span>{{'gauges.property-event-position-vertical' | translate}}</span>
+                    <mat-select [(value)]="item.actoptions.fixedPositionV">
+                        <mat-option *ngFor="let fv of fixedPositionV | enumToArray" [value]="fv.key">
+                            {{ 'gauges.property-event-position-v-' + fv.value | translate }}
+                        </mat-option>
+                    </mat-select>
+                </div>
+                <div class="my-form-field lbk ml10 mt5" style="width: 120px">
+                    <span>{{'gauges.property-event-position-horizontal' | translate}}</span>
+                    <mat-select [(value)]="item.actoptions.fixedPositionH">
+                        <mat-option *ngFor="let fh of fixedPositionH | enumToArray" [value]="fh.key">
+                            {{ 'gauges.property-event-position-h-' + fh.value | translate }}
+                        </mat-option>
+                    </mat-select>
+                </div>
+            </ng-container>
+            <div *ngIf="cardDestination === item.action" class="my-form-field lbk ml10 mt5 tac" style="max-width: 70px">
+                <span>{{'gauges.property-event-single-card' | translate}}</span>
+                <mat-slide-toggle color="primary" [(ngModel)]="item.actoptions.singleCard"></mat-slide-toggle>
+            </div>
+        </div>
+        <div class="my-form-field lbk mt5" style="width: 240px;">
+            <span>{{'gauges.property-event-destination-target-device' | translate}}</span>
+            <mat-select [(value)]="item.actoptions.sourceDeviceId">
+                <mat-option [value]=""></mat-option>
+                <mat-option *ngFor="let device of getDevices();" [value]="device.id">{{ device.name }}</mat-option>
+            </mat-select>
+        </div>
+    </div>
+    <div *ngIf="destinationWithHideClose(item.action)" class="my-form-field lbk ml10 tac" style="max-width: 60px; vertical-align: top;">
+        <span>{{'gauges.property-event-destination-hide-close' | translate}}</span>
+        <mat-slide-toggle color="primary" [(ngModel)]="item.actoptions.hideClose"></mat-slide-toggle>
+    </div>
+    <div *ngIf="destinationWithHideClose(item.action) && !item.actoptions.hideClose" class="my-form-field lbk ml10" style="width: 160px; vertical-align: top;">
+        <span>{{'gauges.property-event-title' | translate}}</span>
+        <input [(ngModel)]="item.actoptions.title" type="text" style="width: 160px">
+    </div>
+    <div *ngIf="withDestination(item.action)" style="padding-left: 25px;">
+        <flex-variables-mapping [(mapping)]="item.actoptions['variablesMapping']" [view]="getView(item.actparam)" [data]="data"></flex-variables-mapping>
+    </div>
+    <div style="display: inline-block" *ngIf="withSetInput(item.action)">
+        <div class="my-form-field ml15" style="width: 260px;">
+            <span>{{'gauges.property-event-input' | translate}}</span>
+            <mat-select [(value)]="item.actparam">
+                <mat-option *ngFor="let v of inputs; index as i" [value]="v.id">{{v.name}}</mat-option>
+            </mat-select>
+        </div>
+    </div>
+    <div class="inbk ml15" *ngIf="withSetValue(item.action)">
+        <div class="my-form-field">
+            <span>{{'gauges.property-event-value' | translate}}</span>
+            <input [(ngModel)]="item.actparam" type="text" style="width: 180px">
+        </div>
+        <div class="my-form-field ml10">
+            <span>{{'gauges.property-event-function' | translate}}</span>
+            <mat-select [(value)]="item.actoptions.function" style="width: 80px;">
+                <mat-option *ngFor="let ev of setValueType | enumToArray" [value]="ev.key">
+                    {{ ev.value }}
+                </mat-option>
+            </mat-select>
+        </div>
+    </div>
+    <div style="display: block; padding-top: 5px;padding-left: 25px;"
+        *ngIf="withSetValue(item.action) || withSetInput(item.action)">
+        <flex-variable style="display: block" [data]="data" [(value)]="item.actoptions.variable" [withStaticValue]="false"></flex-variable>
+    </div>
+    <div style="display: block; padding-top: 5px;padding-left: 25px;"
+        *ngIf="withToggleValue(item.action)">
+        <flex-variable style="display: block"
+                       [data]="data"
+                       [(value)]="item.actoptions.variable"
+                       [withBitmask]="true"
+                       [bitmask]="item.actoptions.variable?.bitmask"
+                       [withStaticValue]="false">
+        </flex-variable>
+    </div>
+    <div class="inbk ml15" *ngIf="withAddress(item.action)">
+        <div class="my-form-field">
+            <span>{{'gauges.property-event-address' | translate}}</span>
+            <input [(ngModel)]="item.actparam" type="text" style="width: 240px">
+        </div>
+        <div *ngIf="eventOnOpenTab === item.action" class="my-form-field lbk ml20 tac" style="max-width: 70px">
+            <span>{{'gauges.property-event-newtab' | translate}}</span>
+            <mat-slide-toggle color="primary" [(ngModel)]="item.actoptions.newTab"></mat-slide-toggle>
+        </div>
+        <div *ngIf="withAddress(item.action)" style="display: table; padding-left: 20px; padding-top: 5px;">
+            <ng-container *ngIf="withSize(item.action)">
+                <div class="my-form-field">
+                    <span>{{'gauges.property-event-width' | translate}}</span>
+                    <input numberOnly [(ngModel)]="item.actoptions.width" type="number" style="width: 60px">
+                </div>
+                <div class="my-form-field ml10">
+                    <span>{{'gauges.property-event-height' | translate}}</span>
+                    <input numberOnly [(ngModel)]="item.actoptions.height" type="number" style="width: 60px">
+                </div>
+            </ng-container>
+            <div class="my-form-field ml10" *ngIf="withScale(item.action)">
+                <span>{{'gauges.property-event-scale' | translate}}</span>
+                <input numberOnly [(ngModel)]="item.actoptions.scale" type="number" style="width: 60px">
+            </div>
+            <div *ngIf="withPosition(item.action)" class="block mt5">
+                <div class="my-form-field">
+                    <span>{{'general-x' | translate}}</span>
+                    <input numberOnly [(ngModel)]="item.actoptions.left" type="number" style="width: 60px">
+                </div>
+                <div class="my-form-field ml10">
+                    <span>{{'general-y' | translate}}</span>
+                    <input numberOnly [(ngModel)]="item.actoptions.top" type="number" style="width: 60px">
+                </div>
+            </div>
+        </div>
+    </div>
+    <ng-container *ngIf="withRunScript(item.action)">
+        <div class="my-form-field inbk" style="width: 260px;padding-left: 20px;">
+            <span>{{'gauges.property-event-script' | translate}}</span>
+            <mat-select [(value)]="item.actparam" (selectionChange)="onScriptChanged($event.value, item)">
+                <mat-option *ngFor="let script of scripts; index as i" [value]="script.id">{{script.name}}</mat-option>
+            </mat-select>
+        </div>
+        <div style="display: table; padding-top: 5px;">
+            <div *ngFor="let scriptParam of item.actoptions['params']; index as i" style="padding-left: 10px; padding-top: 5px;">
+                <div class="my-form-field">
+                    <span>{{'gauges.property-event-script-param-name' | translate}}</span>
+                    <input [(ngModel)]="scriptParam.name" type="text" style="width: 160px" readonly [disabled]="true">
+                </div>
+                <div style="margin-left: 10px; display: inline-block;">
+                    <div class="my-form-field" *ngIf="scriptParam.type === 'value'">
+                        <span>{{'gauges.property-event-script-param-value' | translate}}</span>
+                        <ng-container *ngIf="!isEnterOrSelect(item.type); else enterParamValue">
+                            <input [(ngModel)]="scriptParam.value" type="text" style="width: 260px">
+                        </ng-container>
+                        <ng-template #enterParamValue>
+                            <input [(ngModel)]="scriptParam.value"
+                                placeholder="{{'gauges.property-event-script-param-input-value' | translate}}"
+                                type="text"
+                                style="width: 260px">
+                        </ng-template>
+                    </div>
+                    <div class="my-form-field" *ngIf="scriptParam.type === 'tagid'">
+                        <flex-variable style="display: block" (onchange)="setScriptParam(scriptParam, $event)" [data]="data" [variableId]="scriptParam.value" [withStaticValue]="false"></flex-variable>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ng-container>
+    <!-- Set Control Property -->
+    <ng-container *ngIf="withSetControlProp(item.action)">
+        <div class="my-form-field ml15" style="width: 260px;">
+            <span>{{'gauges.property-event-target-control' | translate}}</span>
+            <mat-select [(value)]="item.actoptions.targetId">
+                <mat-option *ngFor="let ctrl of viewControls" [value]="ctrl.id">
+                    {{ctrl.name}}
+                </mat-option>
+            </mat-select>
+        </div>
+        <div style="display: block; padding-left: 25px; padding-top: 5px;">
+            <div *ngFor="let prop of item.actoptions.properties; let pi = index"
+                 style="display: inline-flex; align-items: center; gap: 5px; margin-right: 8px; margin-bottom: 5px;">
+                <div class="my-form-field" style="width: 130px;">
+                    <span>{{'gauges.property-event-ctrl-prop-type' | translate}}</span>
+                    <mat-select [(value)]="prop.name">
+                        <mat-option *ngFor="let pt of controlPropertyTypes" [value]="pt.key">
+                            {{pt.label | translate}}
+                        </mat-option>
+                    </mat-select>
+                </div>
+                <!-- text -->
+                <div class="my-form-field" *ngIf="prop.name === 'text'" style="width: 160px;">
+                    <span>{{'gauges.property-event-ctrl-prop-value' | translate}}</span>
+                    <input [(ngModel)]="prop.value" type="text" style="width: 140px">
+                </div>
+                <!-- visibility -->
+                <div class="my-form-field" *ngIf="prop.name === 'visibility'" style="width: 120px;">
+                    <span>{{'gauges.property-event-ctrl-prop-value' | translate}}</span>
+                    <mat-select [(value)]="prop.value">
+                        <mat-option value="visible">{{'gauges.property-event-ctrl-visible' | translate}}</mat-option>
+                        <mat-option value="hidden">{{'gauges.property-event-ctrl-hidden' | translate}}</mat-option>
+                    </mat-select>
+                </div>
+                <!-- backgroundColor / color -->
+                <div class="my-form-field" *ngIf="prop.name === 'backgroundColor' || prop.name === 'color'" style="width: 100px;">
+                    <span>{{'gauges.property-event-ctrl-prop-value' | translate}}</span>
+                    <input [(ngModel)]="prop.value" type="color" style="width: 50px; height: 28px; padding: 0; border: none;">
+                </div>
+                <!-- enabled -->
+                <div class="my-form-field" *ngIf="prop.name === 'enabled'" style="width: 120px;">
+                    <span>{{'gauges.property-event-ctrl-prop-value' | translate}}</span>
+                    <mat-select [(value)]="prop.value">
+                        <mat-option value="enabled">{{'gauges.property-event-ctrl-enabled' | translate}}</mat-option>
+                        <mat-option value="disabled">{{'gauges.property-event-ctrl-disabled' | translate}}</mat-option>
+                    </mat-select>
+                </div>
+                <!-- fontSize -->
+                <div class="my-form-field" *ngIf="prop.name === 'fontSize'" style="width: 100px;">
+                    <span>{{'gauges.property-event-ctrl-prop-value' | translate}}</span>
+                    <input numberOnly [(ngModel)]="prop.value" type="number" style="width: 60px">
+                </div>
+                <!-- border -->
+                <div class="my-form-field" *ngIf="prop.name === 'border'" style="width: 180px;">
+                    <span>{{'gauges.property-event-ctrl-prop-value' | translate}}</span>
+                    <input [(ngModel)]="prop.value" type="text" style="width: 160px" placeholder="e.g. 2px solid red">
+                </div>
+                <button mat-icon-button (click)="onRemoveProperty(item, pi)" style="vertical-align: bottom;">
+                    <mat-icon>remove_circle_outline</mat-icon>
+                </button>
+            </div>
+            <button mat-icon-button (click)="onAddProperty(item)" matTooltip="{{'gauges.property-event-ctrl-add-prop' | translate}}">
+                <mat-icon>add_circle_outline</mat-icon>
+            </button>
+        </div>
+    </ng-container>
+</div>

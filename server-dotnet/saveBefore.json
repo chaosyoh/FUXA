@@ -1,0 +1,32 @@
+{
+    "version": "1.0.1",
+    "server": {
+        "id": "0",
+        "name": "FUXA Server",
+        "type": "FuxaServer",
+        "property": {}
+    },
+    "devices": {},
+    "hmi": {
+        "views": [
+            {
+                "id": "v_1120941a2-81510",
+                "name": "MainView",
+                "profile": {
+                    "width": 1024,
+                    "height": 768,
+                    "bkcolor": "#ffffffff",
+                    "margin": 10,
+                    "align": "topCenter",
+                    "gridType": "fixed",
+                    "viewRenderDelay": 0
+                },
+                "items": {},
+                "variables": {},
+                "svgcontent": "<svg width=\"1024\" height=\"768\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\">\n <filter height=\"200\" width=\"200\" y=\"-3\" x=\"-3\" id=\"blur-filter\">\n  <feGaussianBlur stdDeviation=\"3\"/>\n </filter>\n <g>\n  <title>Layer 1</title>\n </g>\n</svg>",
+                "type": "svg"
+            }
+        ]
+    },
+    "timestamp": "2026/5/19 10:52:13"
+}

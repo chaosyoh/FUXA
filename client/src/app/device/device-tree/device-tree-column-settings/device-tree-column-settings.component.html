@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>{{'device-tree.column-settings' | translate}}</h2>
+<mat-dialog-content class="column-settings-content">
+    <div class="column-row" *ngFor="let s of settings; let i = index"
+         [class.hidden-col]="!s.visible">
+        <mat-checkbox [(ngModel)]="s.visible" class="col-checkbox"></mat-checkbox>
+        <span class="col-label" [class.dimmed]="!s.visible">{{s.label}}</span>
+        <div class="col-width-wrap">
+            <input type="number"
+                   [value]="getDisplayWidth(s)"
+                   (change)="onWidthChange(s, $event.target.value)"
+                   class="col-width-input"
+                   min="30" max="600"
+                   (keyup.enter)="onApply()">
+            <span class="col-width-unit">px</span>
+        </div>
+        <div class="col-actions">
+            <button mat-icon-button (click)="moveUp(i)" [disabled]="i === 0" class="col-move-btn">
+                <mat-icon>arrow_upward</mat-icon>
+            </button>
+            <button mat-icon-button (click)="moveDown(i)" [disabled]="i === settings.length - 1" class="col-move-btn">
+                <mat-icon>arrow_downward</mat-icon>
+            </button>
+        </div>
+    </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button (click)="resetToDefaults()">{{'device-tree.column-reset' | translate}}</button>
+    <span class="dialog-spacer"></span>
+    <button mat-button (click)="onCancel()">{{'dlg.cancel' | translate}}</button>
+    <button mat-flat-button color="primary" (click)="onApply()">{{'dlg.apply' | translate}}</button>
+</mat-dialog-actions>

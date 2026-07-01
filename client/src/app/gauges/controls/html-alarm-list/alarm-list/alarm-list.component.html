@@ -1,0 +1,183 @@
+<!-- Toolbar -->
+<div class="alarm-list-toolbar">
+    <button mat-icon-button class="toolbar-btn"
+        [class.active]="!isHistoryMode"
+        [disabled]="isEditor"
+        (click)="onToggleMode()" [title]="'alarms.show-current' | translate">
+        <mat-icon>sensors</mat-icon>
+    </button>
+    <button mat-icon-button class="toolbar-btn"
+        [class.active]="isHistoryMode"
+        [disabled]="isEditor"
+        (click)="onDateRange()" [title]="'alarms.show-history' | translate">
+        <mat-icon>history</mat-icon>
+    </button>
+    <span class="toolbar-range-label" *ngIf="isHistoryMode && dateRangeLabel">
+        {{dateRangeLabel}}
+    </span>
+</div>
+
+<div class="alarm-list-scroll" [style.height]="getScrollHeight()">
+    <mat-table #table [dataSource]="dataSource"
+        [style.backgroundColor]="options?.row?.background"
+        [trackBy]="trackByRow"
+        matSort>
+        <ng-container matColumnDef="ontime">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('ontime')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-ontime' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('ontime')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.ontime?.stringValue}}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="text">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('text')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-text' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('text')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.text?.stringValue}}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('type')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-type' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('type')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.type?.stringValue}}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="group">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('group')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-group' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('group')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.group?.stringValue}}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('status')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-status' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('status')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.status?.stringValue}}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ack">
+            <th mat-header-cell *matHeaderCellDef
+                [style.flex]="getColumnFlex('ack')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('ack')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                <button mat-icon-button *ngIf="element.toack >= 0" (click)="onAckAlarm(element)" [disabled]="element.toack === 0">
+                    <mat-icon>check_circle_outline</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+
+        <!-- History-only columns -->
+        <ng-container matColumnDef="offtime">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('offtime')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-offtime' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('offtime')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.offtime?.stringValue}}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acktime">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('acktime')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-acktime' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('acktime')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.acktime?.stringValue}}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="userack">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                [style.flex]="getColumnFlex('userack')"
+                [style.color]="options?.header?.color"
+                [style.fontSize.px]="options?.header?.fontSize">
+                {{'alarms.view-userack' | translate}}
+            </th>
+            <td mat-cell *matCellDef="let element"
+                [style.flex]="getColumnFlex('userack')"
+                [style.color]="element.color"
+                [style.fontSize.px]="options?.row?.fontSize">
+                {{element.userack?.stringValue}}
+            </td>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" class="alarm-list-header"
+            [style.backgroundColor]="options?.header?.background"
+            [style.height.px]="options?.header?.height"
+            [style.display]="options?.header?.show ? 'flex' : 'none'">
+        </mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"
+            class="alarm-list-row"
+            [ngStyle]="{
+                'background-color': row.bkcolor,
+                'color': row.color,
+                'height.px': options?.row?.height
+            }">
+        </mat-row>
+    </mat-table>
+</div>
+<mat-paginator *ngIf="options?.paginator?.show"
+    [pageSizeOptions]="[10, 25, 100]"
+    [pageSize]="options?.paginator?.pageSize || 25"
+    [style.color]="options?.row?.color"
+    [style.fontSize.px]="options?.paginator?.fontSize || 12"
+    class="alarm-list-paginator">
+</mat-paginator>

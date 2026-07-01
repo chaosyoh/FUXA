@@ -1,0 +1,195 @@
+<div class="container">
+    <h1 mat-dialog-title style="display:inline-block;cursor:move;" mat-dialog-draggable>{{data.title}}</h1>
+    <mat-icon (click)="onNoClick()" class="dialog-close-btn">clear</mat-icon>
+    <div mat-dialog-content class="dialog-content">
+		<mat-tab-group style="width: 100%;">
+			<mat-tab label="{{'gauges.property-props' | translate}}">
+				<div class="mat-tab-container">
+					<div>
+						<div class="my-form-field">
+							<span>{{'gauges.property-name' | translate}}</span>
+							<input [(ngModel)]="data.settings.name" style="width: 220px" type="text">
+						</div>
+						<div class="my-form-field ml10" style="vertical-align: bottom;">
+							<span>{{'gauges.property-permission' | translate}}</span>
+							<div style="text-align:center;" class="my-form-field-permission pointer" (click)="onEditPermission()">
+								<mat-icon *ngIf="havePermission(); else unlock"
+										class="header-icon"
+										style="line-height: 28px;">lock</mat-icon>
+								<ng-template #unlock>
+									<mat-icon class="header-icon"
+											style="line-height: 28px;">lock_open</mat-icon>
+								</ng-template>
+							</div>
+						</div>
+						<div class="my-form-field ml10" *ngIf="isTextToShow()">
+							<span>{{'gauges.property-text' | translate}}</span>
+							<input [(ngModel)]="property.text" style="width: 270px" type="text" placeholder="{{'gauges.property-language-text' | translate}}">
+						</div>
+						<div class="my-form-field" style="padding-left: 100px" *ngIf="isReadonlyToShow()">
+							<span>{{'gauges.property-readonly' | translate}}</span>
+							<mat-slide-toggle color="primary" [(ngModel)]="property.readonly"></mat-slide-toggle>
+						</div>
+						<div class="toolbox" *ngIf="isToolboxToShow()">
+							<button mat-icon-button (click)="onAddInput()">
+								<mat-icon>add_circle_outline</mat-icon>
+							</button>
+						</div>
+					</div>
+					<div mat-dialog-content style="overflow: visible; width:100%;">
+						<flex-widget-property *ngIf="isWidget()"
+											[property]="property">
+						</flex-widget-property>
+						<flex-head *ngIf="!isWidget()" [data]="data" [property]="property" #flexhead [withBitmask]="withBitmask"></flex-head>
+					</div>
+				</div>
+			</mat-tab>
+			<mat-tab label="{{'gauges.property-events' | translate}}" *ngIf="eventsSupported">
+				<div class="mat-tab-container">
+					<div class="toolbox">
+						<button mat-icon-button (click)="onAddEvent()" matTooltip="{{'gauges.property-tooltip-add-event' | translate}}">
+							<mat-icon>add_circle_outline</mat-icon>
+						</button>
+					</div>
+					<div mat-dialog-content style="overflow: visible; width:100%;">
+						<flex-event [property]="property" [views]="views" [data]="data" [inputs]="inputs" [scripts]="scripts" #flexevent style="padding-bottom: 5px"></flex-event>
+					</div>
+				</div>
+			</mat-tab>
+			<mat-tab label="{{'gauges.property-actions' | translate}}" *ngIf="actionsSupported">
+				<div class="mat-tab-container">
+					<div class="toolbox">
+						<button mat-icon-button (click)="onAddAction()">
+							<mat-icon>add_circle_outline</mat-icon>
+						</button>
+						<!-- <button mat-icon-button (click)="slideActionView = !slideActionView; onActionRangeViewToggle()">
+							<mat-icon class="header-icon" *ngIf="slideActionView">toll</mat-icon>
+							<mat-icon class="header-icon" *ngIf="!slideActionView">input</mat-icon>
+						</button>-->
+					</div>
+					<div mat-dialog-content style="overflow: visible; width:100%">
+						<flex-action [data]="data" [property]="property" [withBitmask]="withBitmask" #flexaction style="padding-bottom: 5px">
+						</flex-action>
+					</div>
+				</div>
+			</mat-tab>
+			<mat-tab label="{{'gauges.property-style' | translate}}" *ngIf="isHtmlButton()">
+				<div class="mat-tab-container style-tab">
+					<!-- 边框 -->
+					<div class="style-section">
+						<div class="section-title">
+							<span>{{'gauges.property-border' | translate}}</span>
+						</div>
+						<div class="style-row cols-3">
+							<div class="style-field">
+								<label>{{'gauges.border-width' | translate}} (px)</label>
+								<input numberOnly type="number" min="0" max="20"
+									   [(ngModel)]="property.options.style.border.width">
+							</div>
+							<div class="style-field">
+								<label>{{'gauges.border-style' | translate}}</label>
+								<select [(ngModel)]="property.options.style.border.style">
+									<option value="none">none</option>
+									<option value="solid">solid</option>
+									<option value="dashed">dashed</option>
+									<option value="dotted">dotted</option>
+									<option value="double">double</option>
+								</select>
+							</div>
+							<div class="style-field">
+								<label>{{'gauges.border-color' | translate}}</label>
+								<input type="color" [(ngModel)]="property.options.style.border.color">
+							</div>
+						</div>
+					</div>
+
+					<!-- 圆角 + 内边距 -->
+					<div class="style-section">
+						<div class="section-title">
+							<span>{{'gauges.property-border-radius' | translate}} / {{'gauges.property-padding' | translate}}</span>
+						</div>
+						<div class="style-row cols-2">
+							<div class="style-field">
+								<label>{{'gauges.property-border-radius' | translate}}</label>
+								<input type="text" placeholder="4px / 50% / 8px 16px"
+									   [(ngModel)]="property.options.style.borderRadius">
+							</div>
+							<div class="style-field">
+								<label>{{'gauges.property-padding' | translate}}</label>
+								<input type="text" placeholder="6px 16px"
+									   [(ngModel)]="property.options.style.padding">
+							</div>
+						</div>
+					</div>
+
+					<!-- 字体 + 阴影 -->
+					<div class="style-section">
+						<div class="section-title">
+							<span>{{'gauges.property-font-title' | translate}}</span>
+						</div>
+						<div class="style-row cols-3">
+							<div class="style-field">
+								<label>{{'gauges.property-font-size' | translate}}</label>
+								<input type="text" placeholder="14px / 1rem"
+									   [(ngModel)]="property.options.style.fontSize">
+							</div>
+							<div class="style-field">
+								<label>{{'gauges.property-font-weight' | translate}}</label>
+								<select [(ngModel)]="property.options.style.fontWeight">
+									<option value="">default</option>
+									<option value="normal">normal</option>
+									<option value="bold">bold</option>
+									<option value="lighter">lighter</option>
+									<option value="100">100</option>
+									<option value="200">200</option>
+									<option value="300">300</option>
+									<option value="400">400</option>
+									<option value="500">500</option>
+									<option value="600">600</option>
+									<option value="700">700</option>
+									<option value="800">800</option>
+									<option value="900">900</option>
+								</select>
+							</div>
+							<div class="style-field">
+								<label>{{'gauges.property-box-shadow' | translate}}</label>
+								<input type="text" placeholder="0 1px 4px rgba(0,0,0,.6)"
+									   [(ngModel)]="property.options.style.boxShadow">
+							</div>
+						</div>
+					</div>
+
+					<!-- 自定义 CSS -->
+					<div class="style-section">
+						<div class="section-title">
+							<span>{{'gauges.property-custom-style' | translate}}</span>
+							<div class="section-title-actions">
+								<button mat-icon-button [matTooltip]="'gauges.property-custom-style-paste' | translate"
+										(click)="onPasteCustomStyle()">
+									<mat-icon>content_paste</mat-icon>
+								</button>
+								<button mat-icon-button (click)="onAddCustomStyleEntry()">
+									<mat-icon>add_circle_outline</mat-icon>
+								</button>
+							</div>
+						</div>
+						<div *ngIf="customStyleEntries.length === 0" class="custom-css-empty">
+							{{'gauges.property-custom-style' | translate}} — click + to add
+						</div>
+						<div *ngFor="let kv of customStyleEntries; let i = index" class="custom-css-row">
+							<input type="text" placeholder="font-weight" [(ngModel)]="kv.key">
+							<input type="text" placeholder="bold" [(ngModel)]="kv.value">
+							<button mat-icon-button (click)="onRemoveCustomStyleEntry(i)">
+								<mat-icon>delete_outline</mat-icon>
+							</button>
+						</div>
+					</div>
+				</div>
+			</mat-tab>
+		</mat-tab-group>
+    </div>
+    <div mat-dialog-actions class="dialog-action">
+        <button mat-raised-button (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
+        <button mat-raised-button color="primary" (click)="onOkClick()" [mat-dialog-close]="data" cdkFocusInitial>{{'dlg.ok' | translate}}</button>
+    </div>
+</div>

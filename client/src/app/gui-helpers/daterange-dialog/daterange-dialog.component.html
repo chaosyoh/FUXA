@@ -1,0 +1,47 @@
+<div class="container">
+    <ngx-daterangepicker-material #dtrange
+        [autoApply]="false"
+        [timePicker]="true"
+        [timePicker24Hour]="true"
+        [timePickerSeconds]="true"
+        [locale]="options"
+        [alwaysShowCalendars]="true"
+        [keepCalendarOpeningWithRange]="true"
+        class="custom-datapicker">
+    </ngx-daterangepicker-material>
+
+    <div class="datetime-row">
+        <div class="datetime-item">
+            <mat-icon class="datetime-icon">event</mat-icon>
+            <span class="datetime-value">{{ getStartDateStr() }}</span>
+        </div>
+        <div class="datetime-item">
+            <mat-icon class="datetime-icon">schedule</mat-icon>
+            <input type="time" step="1" class="time-input" [value]="getStartTimeStr()" (change)="onStartTimeChange($event)">
+        </div>
+        <div class="datetime-item">
+            <mat-icon class="datetime-icon">event</mat-icon>
+            <span class="datetime-value">{{ getEndDateStr() }}</span>
+        </div>
+        <div class="datetime-item">
+            <mat-icon class="datetime-icon">schedule</mat-icon>
+            <input type="time" step="1" class="time-input" [value]="getEndTimeStr()" (change)="onEndTimeChange($event)">
+        </div>
+    </div>
+
+    <div class="quick-ranges">
+        <button *ngFor="let range of quickRanges"
+                class="quick-range-btn"
+                [class.active]="activeQuickRange === range.label"
+                (mouseenter)="onQuickRangeHover(range)"
+                (mouseleave)="onQuickRangeLeave()"
+                (click)="onQuickRangeClick(range)">
+            {{ range.label }}
+        </button>
+    </div>
+
+    <div class="action-panel">
+        <button mat-raised-button class="btn-cancel" (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
+        <button mat-raised-button color="primary" (click)="onOkClick()" cdkFocusInitial>{{'dlg.ok' | translate}}</button>
+    </div>
+</div>

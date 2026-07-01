@@ -1,0 +1,456 @@
+:host {
+    .content {
+        min-width: 950px;
+        min-height: 700px;
+    }
+
+    .tab-container {
+        display: block;
+        margin-top: 10px;
+        width: 100%;
+        min-height: 500px;
+        overflow-y: auto;
+        height: 650px;
+    }
+
+    .layout-menu-item-icon {
+        /* position: absolute; */
+        font-size: 17px;
+        height: 18px;
+        width: 18px;
+        /* color: rgba(255,255,255,0.8); */
+        cursor: pointer;
+    }
+
+    .layout-menu-item-link {
+        /* min-width: 150px; */
+        /* color: rgba(0,0,0,0.3); */
+        display: block;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .nav-config {
+        overflow-y: auto;
+
+        .config-left {
+            display: inline-block;
+
+            .nav-item {
+                display: flex;
+                line-height: 35px;
+                min-width: max-content;
+                position: absolute;
+                right: -300px;
+                width: 300px;
+                top: 50%;
+                transform: translateY(-50%);
+                .position {
+                    display: inline-block;
+                    line-height: 35px;
+                    margin-left: 15px;
+                    vertical-align: bottom;
+
+                    mat-icon {
+                        display: block;
+                    }
+                }
+
+                .edit {
+                    display: inline-block;
+                    line-height: 35px;
+
+                    mat-icon {
+                        margin-left: 10px;
+                        vertical-align: middle;
+                    }
+
+                    .type {
+                        display: inline-block;
+                        font-size: 12px;
+                        margin-left: 10px;
+                        white-space: nowrap;
+                    }
+                }
+
+                .remove {
+                    display: inline-block;
+                    line-height: 35px;
+                    margin-left: 10px;
+
+                    mat-icon {
+                        vertical-align: middle;
+                    }
+                }
+            }
+        }
+
+        .config-right {
+            float: right;
+            margin-top: 30px;
+        }
+    }
+
+    .header-layout {
+        display: flex;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2) !important;
+        height: 46px !important;
+        line-height: 46px;
+        padding-left: 4px;
+        padding-right: 10px;
+        background-color: rgba(255, 255, 255, 1);
+
+        .header-menu {
+            display: flex;
+            align-items: center;
+            height: 46px;
+
+            mat-icon {
+                line-height: 24px;
+            }
+        }
+
+        .header-title {
+            display: inline-block;
+            margin-left: 20px;
+            min-width: 200px;
+            text-align: right;
+            line-height: 46px
+        }
+
+        .header-login {
+            display: flex;
+            line-height: 46px;
+            align-items: center;
+            border-left-width: 1px;
+            border-left-style: solid;
+            padding-left: 10px;
+
+            .info {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                height: 46px;
+            }
+
+            .primary {
+                display: block;
+                font-size: 14px;
+                font-weight: 600;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: fit-content;
+                line-height: 16px;
+                opacity: 0.5;
+            }
+
+            .secondary {
+                display: block;
+                font-size: 14px;
+                font-weight: 100;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: fit-content;
+                color: gray;
+                line-height: 16px;
+            }
+        }
+
+        .header-date-time {
+            border-left-width: 1px;
+            border-left-style: solid;
+            padding-left: 10px;
+            padding-right: 10px;
+            display: inline-block;
+        }
+
+        .header-language {
+            padding-left: 10px;
+            padding-right: 10px;
+            display: flex;
+            line-height: 46px;
+            align-items: center;
+            gap: 4px;
+
+            mat-icon {
+                font-size: 28px;
+                width: 28px;
+                height: 28px;
+                line-height: 28px;
+            }
+        }
+
+        .header-notify-button {
+            display: flex;
+            line-height: 46px;
+            text-align: right;
+            margin-left: 10px;
+            margin-right: 10px;
+            padding-right: 10px;
+            align-items: center;
+
+            mat-icon {
+                font-size: 28px;
+                width: 28px;
+                height: 28px;
+            }
+
+            .alarm-button, .info-button {
+                margin-right: 20px;
+            }
+        }
+
+        .header-items-button {
+            flex: 1;
+            align-items: center;
+            display: flex;
+            line-height: 46px;
+        }
+    }
+
+    .header-config {
+        padding-top: 30px;
+        overflow-y: auto;
+
+        .config-left {
+            display: inline-block;
+
+            .add-item {
+                display: inline-block;
+                vertical-align: top;
+                width: 50px;
+            }
+
+            .header-items {
+                display: inline-block;
+
+                mat-list-item {
+                    min-height: 50px;
+                }
+
+                .header-item {
+                    display: flex;
+
+                    .position {
+                        display: inline-block;
+                        vertical-align: bottom;
+
+                        mat-icon {
+                            display: block;
+                        }
+                    }
+
+                    .edit {
+                        display: inline-block;
+                        line-height: 35px;
+
+                        mat-icon {
+                            vertical-align: middle;
+                        }
+
+                        .type {
+                            display: inline-block;
+                            font-size: 12px;
+                            margin-left: 10px;
+                            width: 60px;
+                        }
+                    }
+
+                    .property {
+                        display: inline-block;
+                        line-height: 35px;
+
+                        button {
+                            background-color: dimgrey;
+                            color: white;
+                        }
+                    }
+
+                    .remove {
+                        display: inline-block;
+                        line-height: 35px;
+                        margin-left: 10px;
+
+                        mat-icon {
+                            vertical-align: middle;
+                        }
+                    }
+                }
+            }
+
+        }
+
+        .config-right {
+            float: right;
+
+            .colors {
+                display: block;
+                margin-top: 10px;
+                width: 268px
+            }
+        }
+    }
+
+    .header-item-dialog {
+        // min-width: 350px;
+    }
+
+    .icons-selector {
+        width: 60px;
+        height: 30px;
+    }
+
+    .my-form-field mat-icon {
+        padding-left: 10px;
+        vertical-align: middle;
+    }
+
+    .sidenav-title {
+        font-size: 17px;
+        font-weight: 600;
+    }
+    .dndList {
+        transition: all 600ms ease;
+    }
+
+    ::ng-deep .mat-tab-label {
+        height: 34px !important;
+    }
+
+    ::ng-deep .CodeMirror {
+        height: 100%;
+    }
+
+    .sidenav-submenu-btn {
+        padding-right: 44px;
+    }
+
+    .sidenav-submenu-item .sidenav-btn {
+        justify-content: center;
+        padding-left: 0;
+    }
+
+    .sidenav-submenu-btn {
+        position: relative;
+    }
+
+    .sidenav-submenu-item {
+        width: unset;
+        min-height: unset;
+        height: 40px !important;
+    }
+
+    .sidenav-submenu-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    .submenu-list {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+}
+
+:host ::ng-deep .dndList {
+  --mdc-list-list-item-leading-padding: 0px;
+  --mdc-list-list-item-trailing-padding: 0px;
+}
+
+:host ::ng-deep .dndList .mat-mdc-list-item.mdc-list-item {
+  position: relative;
+  overflow: visible;
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+}
+
+:host ::ng-deep .dndList .mat-mdc-list-item .mdc-list-item__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+}
+
+:host ::ng-deep .dndList .mat-mdc-list-item .mat-mdc-list-item-unscoped-content {
+  flex: 1 1 auto;
+  display: flex;
+  min-width: 0;
+  width: 100%;
+}
+
+:host ::ng-deep .dndList .sidenav-header.mat-mdc-list-item .mdc-list-item__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+:host ::ng-deep .dndList .sidenav-header.mat-mdc-list-item .mat-mdc-list-item-unscoped-content {
+  justify-content: center;
+}
+
+:host ::ng-deep .dndList .mat-mdc-list-item .sidenav-btn {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 12px;
+  padding-right: 12px;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:host ::ng-deep .dndList .sidenav-submenu-btn {
+  position: relative;
+  width: 100%;
+}
+
+:host ::ng-deep .dndList .sidenav-submenu-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Match sidenav: only text + inline align left and reserve space for expand icon. */
+:host ::ng-deep .dndList .menu-item-text.mat-mdc-list-item .sidenav-submenu-btn,
+:host ::ng-deep .dndList .menu-item-inline.mat-mdc-list-item .sidenav-submenu-btn {
+  justify-content: flex-start;
+  padding-left: 12px;
+  padding-right: 44px;
+}
+
+:host ::ng-deep .dndList .menu-item-text.mat-mdc-list-item .sidenav-submenu-btn .mdc-button__label,
+:host ::ng-deep .dndList .menu-item-inline.mat-mdc-list-item .sidenav-submenu-btn .mdc-button__label {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+:host ::ng-deep .dndList .menu-item-text.mat-mdc-list-item .sidenav-submenu-btn .menu-item-content-text {
+  width: 100%;
+  text-align: left;
+}
+
+:host ::ng-deep .dndList .menu-item-inline.mat-mdc-list-item .sidenav-submenu-btn .menu-item-content-inline {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+:host ::ng-deep .dndList .menu-item-text.mat-mdc-list-item .sidenav-submenu-icon,
+:host ::ng-deep .dndList .menu-item-inline.mat-mdc-list-item .sidenav-submenu-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}

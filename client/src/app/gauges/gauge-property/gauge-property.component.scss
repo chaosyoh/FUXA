@@ -1,0 +1,248 @@
+:host {
+  .container {
+    width: 830px;
+    position: relative;
+  }
+  .toolbox {
+      float: right;
+      line-height: 44px;
+  }
+
+  .toolbox button {
+      /* margin-right: 8px; */
+      margin-left: 10px;
+  }
+
+  ::ng-deep .input-text .mat-form-field-infix {
+      padding-top: 5px;
+      padding-bottom: 0px;
+  }
+
+  ::ng-deep .mat-dialog-container {
+      display: inline-table !important;
+  }
+
+  ::ng-deep .mat-tab-label {
+    height: 34px !important;
+  }
+
+  .mat-tab-container {
+    min-height:300px;
+    height:60vmin;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 15px;
+  }
+
+  .mat-tab-container > div {
+    display: block;
+  }
+
+  /* ================================================
+   * HtmlButton Style Tab 美化
+   * ================================================ */
+  .style-tab {
+    padding: 16px 20px;
+    color: #e0e0e0;
+
+    /* 章节卡片 */
+    .style-section {
+      background: #2d2d2d;
+      border: 1px solid #3f3f3f;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: #b0b0b0;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #3f3f3f;
+
+        .section-title-actions {
+          display: flex;
+          gap: 4px;
+        }
+
+        button {
+          width: 22px;
+          height: 22px;
+          line-height: 22px;
+          padding: 0;
+          color: #1976d2;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+          }
+        }
+      }
+    }
+
+    /* 网格行 */
+    .style-row {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: end;          /* 标签换行高度不一致时输入框底部对齐 */
+
+      &.cols-2 { grid-template-columns: 1fr 1fr; }
+      &.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+      &:last-child { margin-bottom: 0; }
+    }
+
+    /* 字段 */
+    .style-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      label {
+        font-size: 11px;
+        color: #9a9a9a;
+        letter-spacing: 0.3px;
+        min-height: 14px;
+        line-height: 14px;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      select {
+        height: 30px;
+        padding: 0 8px;
+        background: #1e1e1e;
+        border: 1px solid #404040;
+        border-radius: 3px;
+        color: #e0e0e0;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.15s;
+
+        &:focus { border-color: #1976d2; }
+        &::placeholder { color: #6a6a6a; font-style: italic; }
+      }
+
+      input[type="color"] {
+        height: 30px;
+        width: 100%;
+        padding: 2px;
+        background: #1e1e1e;
+        border: 1px solid #404040;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+    }
+
+    /* 预设主题选择网格 */
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+
+      .preset-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 8px 6px 6px;
+        background: #1e1e1e;
+        border: 1px solid #404040;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+        position: relative;
+
+        &:hover {
+          border-color: #1976d2;
+          transform: translateY(-1px);
+        }
+
+        &.active {
+          border-color: #1976d2;
+          box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+        }
+
+        /* 预览区域：容纳按钮真实样式 */
+        .preset-sample-wrap {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 30px;
+          width: 100%;
+          margin-bottom: 6px;
+        }
+
+        .preset-sample {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          line-height: 1;
+          color: #fff;
+          background-color: #1976d2;
+          border: none;
+          pointer-events: none;
+          white-space: nowrap;
+        }
+
+        .preset-label {
+          width: 100%;
+          text-align: center;
+          font-size: 11px;
+          font-weight: 600;
+          color: #d8d8d8;
+          letter-spacing: 0.4px;
+        }
+
+        &.active .preset-label {
+          color: #4ea1ff;
+        }
+      }
+    }
+
+    /* 自定义 CSS 键值对行 */
+    .custom-css-row {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr 30px;
+      gap: 6px;
+      margin-bottom: 6px;
+      align-items: center;
+
+      button {
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        padding: 0;
+        color: #c62828;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          line-height: 18px;
+        }
+      }
+    }
+
+    .custom-css-empty {
+      text-align: center;
+      padding: 16px;
+      color: #707070;
+      font-size: 12px;
+      font-style: italic;
+      border: 1px dashed #404040;
+      border-radius: 4px;
+    }
+  }
+}
+

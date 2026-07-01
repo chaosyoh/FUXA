@@ -1,0 +1,168 @@
+﻿<!doctype html>
+<html>
+
+<head>
+    <base href="/" />
+    <title>中科智穗云SCADA</title>
+    <meta charset="UTF-8">
+    <script>
+        (function() {
+            // Use actual screen dimensions
+            var screenWidth = window.screen.width * (window.devicePixelRatio || 1);
+            var targetWidth = 768; // Target width for mobile devices (lower = bigger content)
+
+            if (window.screen.width < 768) {
+                var scale = window.screen.width / targetWidth;
+                document.write('<meta name="viewport" content="width=' + targetWidth + ', initial-scale=' + scale + ', minimum-scale=' + scale + ', maximum-scale=' + scale + ', user-scalable=no, viewport-fit=cover">');
+            } else {
+                document.write('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">');
+            }
+
+            /* DEBUGGING ONLY
+            var j = JSON.stringify({
+                screenWidth: window.screen.width,
+                innerWidth: window.innerWidth,
+                devicePixelRatio: window.devicePixelRatio,
+                scale: window.visualViewport?.scale,
+                vpWidth: window.visualViewport?.width,
+                vpHeight: window.visualViewport?.height,
+                calculatedScale: window.screen.width / targetWidth
+            })
+            console.log(j)
+            */
+
+            // Reload page on orientation change
+            window.addEventListener('orientationchange', function() {
+                window.location.reload();
+            });
+        })();
+    </script>
+    <style>
+        /* disable pitch html pich zoom. zoom in fuxa svg view still works */
+        html, body {
+            touch-action: manipulation;
+            -webkit-text-size-adjust: none;
+        }
+    </style>
+
+    <!-- 1° Load styles -->
+    <link rel="stylesheet" href="assets/lib/svgeditor/jquery-plugin.min.css">
+
+    <link rel="stylesheet" href="assets/lib/svgeditor/extensions/ext-html_button.min.css">
+    <link rel="stylesheet" href="assets/lib/svgeditor/svg-editor.min.css">
+    <link rel="stylesheet" href="assets/lib/ext-styles.css">
+    <link rel="stylesheet" href="assets/lib/nouislider/nouislider.min.css">
+
+    <!-- 2° Load libraries -->
+    <script src="assets/lib/svgeditor/jquery.min.js"></script>
+    <script src="assets/lib/svgeditor/jquery-ui-1.8.17.custom.min.js"></script>
+    <script src="assets/lib/svgeditor/jquery-plugin.min.js"></script>
+
+    <script src="assets/lib/gauge/gauge.js"></script>
+    <script src="assets/lib/nouislider/nouislider.min.js"></script>
+    <script src="assets/lib/numeral/numeral.min.js"></script>
+
+    <script src="assets/lib/svgeditor/extensions/ext-bundle.min.js"></script>
+
+    <script src="assets/lib/svgeditor/fuxa-editor.min.js"></script>
+    <script src="assets/lib/svgeditor/shapes/shapes.js"></script>
+
+
+    <script src="assets/lib/svg/svg.min.js"></script>
+    <script src="assets/lib/svg/raphael.min.js"></script>
+
+</head>
+<!-- 3. Display the application -->
+
+<body>
+    <app-root>
+        <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0a1628;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;">
+            <div class="loader-wrapper">
+                <div class="loader-ring ring-outer"></div>
+                <div class="loader-ring ring-middle"></div>
+                <div class="loader-ring ring-inner"></div>
+                <div class="loader-core"></div>
+            </div>
+            <div class="loader-text">LOADING<span class="dots"></span></div>
+        </div>
+    </app-root>
+    <style>
+        .loader-wrapper {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+        .loader-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid transparent;
+        }
+        .ring-outer {
+            width: 80px;
+            height: 80px;
+            top: 0; left: 0;
+            border-top-color: #00e5ff;
+            border-right-color: #00e5ff;
+            animation: spin-cw 1.5s linear infinite;
+            box-shadow: 0 0 8px rgba(0,229,255,0.3);
+        }
+        .ring-middle {
+            width: 60px;
+            height: 60px;
+            top: 10px; left: 10px;
+            border-bottom-color: #2979ff;
+            border-left-color: #2979ff;
+            animation: spin-ccw 1.2s linear infinite;
+            box-shadow: 0 0 6px rgba(41,121,255,0.3);
+        }
+        .ring-inner {
+            width: 40px;
+            height: 40px;
+            top: 20px; left: 20px;
+            border-top-color: #76ff03;
+            border-right-color: #76ff03;
+            animation: spin-cw 0.8s linear infinite;
+            box-shadow: 0 0 6px rgba(118,255,3,0.3);
+        }
+        .loader-core {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            top: 34px; left: 34px;
+            background: radial-gradient(circle, #00e5ff, transparent);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .loader-text {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: #80cbc4;
+            text-transform: uppercase;
+        }
+        .dots::after {
+            content: '';
+            animation: dots-anim 1.5s steps(4, end) infinite;
+        }
+        @keyframes spin-cw {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-ccw {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes dots-anim {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+    </style>
+</body>
+
+</html>

@@ -1,0 +1,88 @@
+<div class="change-refs-dialog">
+    <h1 mat-dialog-title class="dialog-title" mat-dialog-draggable>{{'editor.change-references-title' | translate}}</h1>
+    <mat-icon (click)="onCancelClick()" class="dialog-close-btn">clear</mat-icon>
+    <div mat-dialog-content class="content">
+        <div class="left-panel">
+            <div class="find-section">
+                <label class="section-label">{{'editor.change-refs-find' | translate}}:</label>
+                <mat-form-field appearance="outline" class="full-width-input">
+                    <input matInput [(ngModel)]="searchText" (keyup.enter)="findNext()"
+                           [matAutocomplete]="autoSearch">
+                    <mat-autocomplete #autoSearch="matAutocomplete">
+                        <ng-container *ngIf="replaceMode === 'deviceName'">
+                            <mat-option *ngFor="let opt of filteredRefDeviceNames" [value]="opt">{{opt}}</mat-option>
+                        </ng-container>
+                    </mat-autocomplete>
+                </mat-form-field>
+                <div class="search-options">
+                    <mat-checkbox [(ngModel)]="matchWholeWord">{{'editor.change-refs-whole-word' | translate}}</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="useWildcards">{{'editor.change-refs-wildcards' | translate}}</mat-checkbox>
+                </div>
+                <div class="replace-mode">
+                    <mat-radio-group [(ngModel)]="replaceMode">
+                        <mat-radio-button value="tagName">{{'editor.change-refs-mode-tag' | translate}}</mat-radio-button>
+                        <mat-radio-button value="deviceName">{{'editor.change-refs-mode-device' | translate}}</mat-radio-button>
+                    </mat-radio-group>
+                </div>
+                <button mat-raised-button class="action-btn" (click)="findNext()">{{'editor.change-refs-find-next' | translate}}</button>
+            </div>
+            <div class="replace-section">
+                <label class="section-label">{{'editor.change-refs-replace' | translate}}:</label>
+                <mat-form-field appearance="outline" class="full-width-input">
+                    <input matInput [(ngModel)]="replaceText"
+                           [matAutocomplete]="autoReplace">
+                    <mat-autocomplete #autoReplace="matAutocomplete">
+                        <ng-container *ngIf="replaceMode === 'deviceName'">
+                            <mat-option *ngFor="let opt of filteredAllDeviceNames" [value]="opt">{{opt}}</mat-option>
+                        </ng-container>
+                    </mat-autocomplete>
+                </mat-form-field>
+                <div class="replace-actions">
+                    <button mat-raised-button class="action-btn" (click)="onReplaceCurrent()">{{'editor.change-refs-replace-btn' | translate}}</button>
+                    <button mat-raised-button class="action-btn" (click)="onReplaceAll()">{{'editor.change-refs-replace-all' | translate}}</button>
+                </div>
+            </div>
+            <div class="search-status" *ngIf="matchedIndices.length > 0">
+                {{currentMatchIndex + 1}} / {{matchedIndices.length}}
+            </div>
+            <div class="search-error" *ngIf="errorMessage">
+                {{errorMessage}}
+            </div>
+        </div>
+        <div class="right-panel">
+            <table class="refs-table">
+                <thead>
+                    <tr>
+                        <th class="col-object">{{'editor.change-refs-col-object' | translate}}</th>
+                        <th class="col-location">{{'editor.change-refs-col-location' | translate}}</th>
+                        <th class="col-reference">{{'editor.change-refs-col-reference' | translate}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <ng-container *ngFor="let row of displayRows; let i = index">
+                        <tr *ngIf="row.isGroup" class="group-row">
+                            <td colspan="3">{{row.gaugeName || row.gaugeId}}</td>
+                        </tr>
+                        <tr *ngIf="!row.isGroup"
+                            [class.matched]="row.matched"
+                            [class.current-match]="isCurrentMatch(i)"
+                            [class.replaced]="row.replaced"
+                            [class.error-row]="row.error">
+                            <td class="col-object"></td>
+                            <td class="col-location">{{row.ref?.pathDisplay}}</td>
+                            <td class="col-reference">
+                                <span class="tag-info">{{row.ref?.deviceName}} - {{row.ref?.tagName}}</span>
+                                <span *ngIf="row.replaced" class="replaced-info"> &rarr; {{row.newTagName}}</span>
+                                <span *ngIf="row.error" class="error-info">{{row.error}}</span>
+                            </td>
+                        </tr>
+                    </ng-container>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div mat-dialog-actions class="dialog-action">
+        <button mat-raised-button (click)="onOkClick()" color="primary" cdkFocusInitial>{{'dlg.ok' | translate}}</button>
+        <button mat-raised-button (click)="onCancelClick()">{{'dlg.cancel' | translate}}</button>
+    </div>
+</div>

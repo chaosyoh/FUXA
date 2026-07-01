@@ -1,0 +1,46 @@
+<div class="write-dialog-wrapper">
+    <h1 mat-dialog-title class="dialog-title">{{'device.write-value-title' | translate}}</h1>
+    <mat-icon (click)="onCancel()" class="dialog-close-btn">clear</mat-icon>
+    <div class="write-dialog-body">
+        <div class="tag-info">
+            <span class="tag-name">{{tagName}}</span>
+            <span class="tag-type">({{tagType}})</span>
+        </div>
+
+        <div *ngIf="isReadOnly" class="readonly-warning">
+            <mat-icon>lock</mat-icon>
+            <span>{{'device.write-value-readonly' | translate}}</span>
+        </div>
+
+        <div *ngIf="!isReadOnly" class="write-input">
+            <!-- Bool type: dropdown -->
+            <div *ngIf="inputMode === 'bool'" class="my-form-field item-block">
+                <span>{{'device.list-value' | translate}}</span>
+                <mat-select [(value)]="writeValue">
+                    <mat-option value="true">true</mat-option>
+                    <mat-option value="false">false</mat-option>
+                </mat-select>
+            </div>
+            <!-- Integer type: integer input -->
+            <div *ngIf="inputMode === 'int'" class="my-form-field item-block">
+                <span>{{'device.list-value' | translate}}</span>
+                <input type="number" step="1" [(ngModel)]="writeValue">
+            </div>
+            <!-- Float type: decimal input -->
+            <div *ngIf="inputMode === 'float'" class="my-form-field item-block">
+                <span>{{'device.list-value' | translate}}</span>
+                <input type="number" step="any" [(ngModel)]="writeValue">
+            </div>
+            <!-- String type: text input -->
+            <div *ngIf="inputMode === 'string'" class="my-form-field item-block">
+                <span>{{'device.list-value' | translate}}</span>
+                <input type="text" [(ngModel)]="writeValue">
+            </div>
+        </div>
+
+        <div class="dialog-action">
+            <button mat-raised-button (click)="onCancel()">{{'dlg.cancel' | translate}}</button>
+            <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="isReadOnly">{{'dlg.ok' | translate}}</button>
+        </div>
+    </div>
+</div>

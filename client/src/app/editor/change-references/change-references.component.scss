@@ -1,0 +1,203 @@
+.change-refs-dialog {
+    position: relative;
+}
+
+.content {
+    height: 500px;
+    min-width: 1050px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.left-panel {
+    width: 220px;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    padding-right: 12px;
+
+    .find-section {
+        margin-bottom: 12px;
+    }
+
+    .replace-section {
+        margin-top: 16px;
+        margin-bottom: 12px;
+    }
+
+    .section-label {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .full-width-input {
+        width: 100%;
+        ::ng-deep .mat-mdc-form-field-infix {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            min-height: 32px;
+        }
+        ::ng-deep .mat-mdc-text-field-wrapper {
+            padding: 0 8px;
+        }
+        ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+            display: none;
+        }
+    }
+
+    .search-options {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+        font-size: 12px;
+    }
+
+    .replace-mode {
+        margin-bottom: 8px;
+        font-size: 12px;
+
+        mat-radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+    }
+
+    .action-btn {
+        font-size: 12px;
+        line-height: 28px;
+        width: 100%;
+        margin-bottom: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .replace-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+
+        .action-btn {
+            flex: 1;
+            width: auto;
+        }
+    }
+}
+
+.search-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-error {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #f44336;
+}
+
+.right-panel {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+.refs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+
+    thead {
+        position: sticky;
+        top: 0;
+        background: rgba(255, 255, 255, 0.08);
+        z-index: 1;
+
+        th {
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            font-weight: 500;
+        }
+    }
+
+    tbody {
+        tr {
+            &:hover {
+                background: rgba(255, 255, 255, 0.04);
+            }
+
+            &.group-row {
+                background: rgba(255, 255, 255, 0.06);
+                td {
+                    font-weight: 500;
+                    padding: 4px 8px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                }
+            }
+
+            &.matched {
+                background: rgba(255, 235, 59, 0.15);
+            }
+
+            &.current-match {
+                background: rgba(255, 152, 0, 0.25);
+            }
+
+            &.replaced {
+                background: rgba(76, 175, 80, 0.1);
+            }
+
+            &.error-row {
+                background: rgba(244, 67, 54, 0.1);
+            }
+
+            td {
+                padding: 4px 8px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                vertical-align: middle;
+            }
+        }
+    }
+
+    .col-object {
+        width: 15%;
+    }
+
+    .col-location {
+        width: 30%;
+    }
+
+    .col-reference {
+        width: 55%;
+    }
+}
+
+.tag-info {
+    display: inline;
+}
+
+.replaced-info {
+    color: #4caf50;
+    font-weight: 500;
+}
+
+.error-info {
+    color: #f44336;
+    margin-left: 8px;
+    font-style: italic;
+}
+
+.dialog-action {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 8px 0;
+}

@@ -1,0 +1,105 @@
+.container {
+    background-color: white;
+}
+
+.custom-datapicker {
+    display: flex;
+}
+
+/* Hide built-in Apply/Cancel buttons and time selectors */
+::ng-deep .md-drppicker .buttons {
+    display: none !important;
+}
+
+::ng-deep .md-drppicker .calendar-time {
+    display: none !important;
+}
+
+.datetime-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 10px 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.datetime-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.datetime-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.datetime-value {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.85);
+    white-space: nowrap;
+}
+
+.time-input {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.85);
+    outline: none;
+    width: 90px;
+    padding: 0;
+}
+
+.time-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+}
+
+.quick-ranges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+}
+
+.quick-range-btn {
+    padding: 4px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.75);
+    transition: all 0.15s;
+}
+
+.quick-range-btn:hover,
+.quick-range-btn.active {
+    border-color: #1976d2;
+    color: #1976d2;
+    background-color: rgba(25, 118, 210, 0.04);
+}
+
+.action-panel {
+    float: right;
+    padding-right: 20px;
+    margin-bottom: 8px;
+    margin-top: 4px;
+}
+
+.action-panel .btn-cancel {
+    background-color: white;
+    color: black;
+    margin-right: 10px;
+}
+
+::ng-deep .light-dialog-container .mat-dialog-container {
+    background-color: white !important;
+}

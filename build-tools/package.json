@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.19.0"
+  }
+}

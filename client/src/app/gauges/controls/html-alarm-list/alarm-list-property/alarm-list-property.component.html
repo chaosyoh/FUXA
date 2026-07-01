@@ -1,0 +1,139 @@
+<div class="element-property">
+    <div class="element-property-title">
+        {{'alarmlist.property-title' | translate}}
+    </div>
+    <div class="alarm-list-settings">
+        <!-- Name -->
+        <div class="my-form-field section-item section-item-block mt5">
+            <span>{{'table.property-name' | translate}}</span>
+            <input [(ngModel)]="data.settings.name" (change)="onChanged()" (keyup.enter)="onChanged()" type="text">
+        </div>
+
+        <!-- Group Filter -->
+        <div class="element-property-header mt10">
+            <span>{{'alarmlist.property-groups' | translate}}</span>
+        </div>
+        <div class="block mt5">
+            <div class="my-form-field section-item section-item-block">
+                <span>{{'alarmlist.property-groups-selected' | translate}}</span>
+                <div class="groups-display" (click)="onSelectGroups()">
+                    {{getGroupsDisplayText()}}
+                    <button mat-icon-button class="groups-edit-btn">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columns (Unified: realtime + history + width) -->
+        <div class="element-property-header mt10">
+            <span>{{'alarmlist.property-columns' | translate}}</span>
+        </div>
+        <div class="block mt5 column-config-section">
+            <div class="column-config-header">
+                <span class="col-name">{{'alarmlist.property-col-name' | translate}}</span>
+                <span class="col-check">{{'alarmlist.property-col-realtime' | translate}}</span>
+                <span class="col-check">{{'alarmlist.property-col-history' | translate}}</span>
+                <span class="col-width">{{'alarmlist.property-col-width' | translate}}</span>
+            </div>
+            <div *ngFor="let col of getAllColumnsUnion()" class="column-config-row">
+                <span class="col-name">{{getColumnName(col)}}</span>
+                <mat-checkbox class="col-check"
+                    [checked]="isColumnSelected(col)"
+                    (change)="onColumnToggle(col, $event.checked)">
+                </mat-checkbox>
+                <mat-checkbox class="col-check"
+                    [checked]="isHistoryColumnSelected(col)"
+                    (change)="onHistoryColumnToggle(col, $event.checked)">
+                </mat-checkbox>
+                <input class="col-width" numberOnly type="number" min="0" max="1000"
+                    [ngModel]="getColumnWidth(col)"
+                    (ngModelChange)="setColumnWidth(col, $event)"
+                    (keyup.enter)="onChanged()">
+            </div>
+        </div>
+
+        <!-- Header Style -->
+        <div class="element-property-header mt10">
+            <span>{{'table.property-header' | translate}}</span>
+        </div>
+        <div class="block mt5">
+            <div class="my-form-field section-inline-number">
+                <span>{{'table.property-header-height' | translate}}</span>
+                <input numberOnly [(ngModel)]="options.header.height" (change)="onChanged()" (keyup.enter)="onChanged()" type="number" min="0" max="100">
+            </div>
+            <div class="my-form-field section-inline-number ml5">
+                <span>{{'table.property-row-fontSize' | translate}}</span>
+                <input numberOnly [(ngModel)]="options.header.fontSize" (change)="onChanged()" (keyup.enter)="onChanged()" type="number" min="8" max="30">
+            </div>
+            <div class="my-form-field section-inline-color color-field ml5">
+                <span>{{'table.property-header-background' | translate}}</span>
+                <input [(colorPicker)]="options.header.background" [cpAlphaChannel]="'always'" class="input-color" [style.background]="options.header.background"
+                    [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 88px" [cpPosition]="'auto'"
+                    (colorPickerChange)="onChanged()" />
+            </div>
+            <div class="my-form-field section-inline-color color-field ml15">
+                <span>{{'table.property-header-color' | translate}}</span>
+                <input [(colorPicker)]="options.header.color" [cpAlphaChannel]="'always'" class="input-color" [style.background]="options.header.color"
+                    [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 88px" [cpPosition]="'auto'"
+                    (colorPickerChange)="onChanged()" />
+            </div>
+            <div class="my-form-field section-inline-toggle slider-field mt5">
+                <span>{{'alarmlist.property-header-show' | translate}}</span>
+                <mat-slide-toggle color="primary" [(ngModel)]="options.header.show" (change)="onChanged()"></mat-slide-toggle>
+            </div>
+        </div>
+
+        <!-- Row Style -->
+        <div class="element-property-header mt10">
+            <span>{{'table.property-row' | translate}}</span>
+        </div>
+        <div class="block mt5">
+            <div class="my-form-field section-inline-number">
+                <span>{{'table.property-row-height' | translate}}</span>
+                <input numberOnly [(ngModel)]="options.row.height" (change)="onChanged()" (keyup.enter)="onChanged()" type="number" min="0" max="100">
+            </div>
+            <div class="my-form-field section-inline-number ml5">
+                <span>{{'table.property-row-fontSize' | translate}}</span>
+                <input numberOnly [(ngModel)]="options.row.fontSize" (change)="onChanged()" (keyup.enter)="onChanged()" type="number" min="8" max="30">
+            </div>
+            <div class="my-form-field section-inline-color color-field ml5">
+                <span>{{'table.property-row-background' | translate}}</span>
+                <input [(colorPicker)]="options.row.background" [cpAlphaChannel]="'always'" class="input-color" [style.background]="options.row.background"
+                    [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 88px" [cpPosition]="'auto'"
+                    (colorPickerChange)="onChanged()" />
+            </div>
+            <div class="my-form-field section-inline-color color-field ml15">
+                <span>{{'table.property-row-color' | translate}}</span>
+                <input [(colorPicker)]="options.row.color" [cpAlphaChannel]="'always'" class="input-color" [style.background]="options.row.color"
+                    [cpPresetColors]="defaultColor" [cpOKButton]="true" [cpCancelButton]="true" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" style="width: 88px" [cpPosition]="'auto'"
+                    (colorPickerChange)="onChanged()" />
+            </div>
+        </div>
+
+        <!-- Paginator / Layout -->
+        <div class="element-property-header mt10">
+            <span>{{'alarmlist.property-layout' | translate}}</span>
+        </div>
+        <div class="block mt5">
+            <div class="my-form-field section-inline-toggle slider-field">
+                <span>{{'table.property-paginator' | translate}}</span>
+                <mat-slide-toggle color="primary" [(ngModel)]="options.paginator.show" (change)="onChanged()"></mat-slide-toggle>
+            </div>
+            <div class="my-form-field section-inline-number ml5">
+                <span>{{'alarmlist.property-paginator-fontSize' | translate}}</span>
+                <input numberOnly [(ngModel)]="options.paginator.fontSize" (change)="onChanged()" (keyup.enter)="onChanged()" type="number" min="8" max="24">
+            </div>
+        </div>
+        <div class="block mt5">
+            <div class="my-form-field section-inline-toggle slider-field">
+                <span>{{'alarmlist.property-show-border' | translate}}</span>
+                <mat-slide-toggle color="primary" [(ngModel)]="options.showBorder" (change)="onChanged()"></mat-slide-toggle>
+            </div>
+        </div>
+    </div>
+</div>

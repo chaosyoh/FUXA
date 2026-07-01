@@ -1,0 +1,23 @@
+<h1 mat-dialog-title class="dialog-title" mat-dialog-draggable>{{'alarmlist.groups-title' | translate}}</h1>
+<mat-icon (click)="onNoClick()" class="dialog-close-btn">clear</mat-icon>
+<div mat-dialog-content>
+    <div class="groups-toolbar">
+        <button mat-button (click)="onSelectAll()" class="mr5">{{'alarmlist.groups-select-all' | translate}}</button>
+        <button mat-button (click)="onClearAll()">{{'alarmlist.groups-clear-all' | translate}}</button>
+    </div>
+    <div class="groups-list" *ngIf="allGroups.length > 0; else noGroups">
+        <div *ngFor="let group of allGroups" class="group-item">
+            <mat-checkbox [checked]="isGroupSelected(group)"
+                (change)="onGroupToggle(group, $event.checked)">
+                {{group}}
+            </mat-checkbox>
+        </div>
+    </div>
+    <ng-template #noGroups>
+        <div class="no-groups">{{'alarmlist.no-groups' | translate}}</div>
+    </ng-template>
+</div>
+<div mat-dialog-actions align="end">
+    <button mat-button (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
+    <button mat-raised-button color="primary" (click)="onOkClick()">{{'dlg.ok' | translate}}</button>
+</div>

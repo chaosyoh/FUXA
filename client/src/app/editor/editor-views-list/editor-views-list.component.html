@@ -1,0 +1,131 @@
+<!-- Search bar -->
+<div class="view-search-bar">
+    <mat-icon class="view-search-icon">search</mat-icon>
+    <input #searchInput
+           type="text"
+           class="view-search-input"
+           [value]="searchText"
+           (input)="onSearchChange(searchInput.value)"
+           placeholder="{{'editor.view-search-placeholder' | translate}}" />
+    <mat-icon *ngIf="searchText"
+              class="view-search-clear pointer"
+              (click)="onClearSearch(); searchInput.value = ''">
+        close
+    </mat-icon>
+</div>
+
+<div class="view-tree-root">
+
+    <!-- Root folders -->
+    <ng-container *ngFor="let folder of rootFolders; trackBy: trackByFolderId">
+        <ng-container *ngTemplateOutlet="folderTemplate; context: {$implicit: folder, level: 0}"></ng-container>
+    </ng-container>
+
+    <!-- Root views (no folderId) -->
+    <ng-container *ngFor="let item of getViewsInFolder(null); trackBy: trackByViewId">
+        <ng-container *ngTemplateOutlet="viewTemplate; context: {$implicit: item, level: 0}"></ng-container>
+    </ng-container>
+
+    <div *ngIf="(!views || views.length <= 0) && (!viewFolders || viewFolders.length <= 0)">
+        <br>
+    </div>
+</div>
+
+<!-- Recursive folder template -->
+<ng-template #folderTemplate let-folder let-level="level">
+    <div class="folder-row">
+
+        <div class="folder-header" [style.padding-left.px]="level * 16">
+            <!-- Expand/Collapse icon -->
+            <mat-icon class="folder-toggle pointer"
+                      (click)="toggleFolder(folder, $event)">
+                {{isFolderExpanded(folder) ? 'expand_more' : 'chevron_right'}}
+            </mat-icon>
+
+            <!-- Folder icon -->
+            <mat-icon class="folder-icon">
+                {{isFolderExpanded(folder) ? 'folder_open' : 'folder'}}
+            </mat-icon>
+
+            <!-- Folder name -->
+            <span class="folder-name">{{folder.name}}</span>
+
+            <!-- Context menu (shared single mat-menu instance) -->
+            <mat-icon aria-label="More"
+                      [matMenuTriggerFor]="sharedFolderMenu"
+                      [matMenuTriggerData]="{item: folder}"
+                      (click)="$event.stopPropagation()"
+                      class="pointer">
+                more_vert
+            </mat-icon>
+        </div>
+
+        <!-- Folder children (only when expanded) -->
+        <div *ngIf="isFolderExpanded(folder)" class="folder-children">
+            <!-- Sub-folders -->
+            <ng-container *ngFor="let childFolder of getChildFolders(folder.id); trackBy: trackByFolderId">
+                <ng-container *ngTemplateOutlet="folderTemplate; context: {$implicit: childFolder, level: level + 1}"></ng-container>
+            </ng-container>
+
+            <!-- Views in this folder -->
+            <ng-container *ngFor="let item of getViewsInFolder(folder.id); trackBy: trackByViewId">
+                <ng-container *ngTemplateOutlet="viewTemplate; context: {$implicit: item, level: level + 1}"></ng-container>
+            </ng-container>
+        </div>
+    </div>
+</ng-template>
+
+<!-- View item template -->
+<ng-template #viewTemplate let-item let-level="level">
+    <div (click)="onSelectView(item, false)"
+         [ngClass]="{'leftbar-item-active': isViewActive(item)}"
+         class="leftbar-item pointer"
+         [style.padding-left.px]="level * 16">
+        <mat-icon *ngIf="!item.type || item.type === svgViewType"
+                  matTooltip="{{'editor.view-svg' | translate}}"
+                  class="leftbar-item-type item-icon-view">
+            wysiwyg
+        </mat-icon>
+        <mat-icon *ngIf="item.type === cardViewType"
+                  matTooltip="{{'editor.view-cards' | translate}}"
+                  class="leftbar-item-type item-icon-cards">
+            grid_view
+        </mat-icon>
+        <mat-icon *ngIf="item.type === mapsViewType"
+                  matTooltip="{{'editor.view-maps' | translate}}"
+                  class="leftbar-item-type item-icon-maps">
+            map
+        </mat-icon>
+        <span class="view-item-text">
+            {{item.name}}
+        </span>
+        <!-- Context menu (shared single mat-menu instance) -->
+        <mat-icon aria-label="More"
+                  [matMenuTriggerFor]="sharedViewMenu"
+                  [matMenuTriggerData]="{item: item}"
+                  (click)="$event.stopPropagation()">
+            more_vert
+        </mat-icon>
+    </div>
+</ng-template>
+
+<!-- Shared folder context-menu (single instance reused via matMenuTriggerData) -->
+<mat-menu #sharedFolderMenu="matMenu" class="leftbar-item-menu">
+    <ng-template matMenuContent let-item="item">
+        <button mat-menu-item (click)="onCreateSubfolder(item)">{{'editor.folder-add-subfolder' | translate}}</button>
+        <button mat-menu-item (click)="onRenameFolder(item)">{{'editor.folder-rename' | translate}}</button>
+        <button mat-menu-item (click)="onDeleteFolder(item)">{{'editor.folder-delete' | translate}}</button>
+    </ng-template>
+</mat-menu>
+
+<!-- Shared view context-menu (single instance reused via matMenuTriggerData) -->
+<mat-menu #sharedViewMenu="matMenu" class="leftbar-item-menu">
+    <ng-template matMenuContent let-item="item">
+        <button mat-menu-item (click)="onDeleteView(item)">{{'editor.view-delete' | translate}}</button>
+        <button mat-menu-item (click)="onRenameView(item)">{{'editor.view-rename' | translate}}</button>
+        <button mat-menu-item (click)="onPropertyView(item)">{{'editor.view-property' | translate}}</button>
+        <button mat-menu-item (click)="onCloneView(item)" *ngIf="item.type !== cardViewType && item.type !== mapsViewType">{{'editor.view-clone' | translate}}</button>
+        <button mat-menu-item (click)="onExportView(item)" *ngIf="item.type !== cardViewType && item.type !== mapsViewType">{{'editor.view-export' | translate}}</button>
+        <button mat-menu-item (click)="onCleanView(item)" *ngIf="item.type !== cardViewType && item.type !== mapsViewType">{{'editor.view-clean' | translate}}</button>
+    </ng-template>
+</mat-menu>

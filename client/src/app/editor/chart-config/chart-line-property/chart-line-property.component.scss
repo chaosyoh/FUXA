@@ -1,0 +1,67 @@
+:host {
+    .container {
+        width: 400px;
+    }
+
+    .block-input {
+        display: block;
+        width: 100%;
+
+        input {
+            width: calc(100% - 5px);
+        }
+    }
+
+    .partial-input {
+        width: 150px;
+
+        input {
+            width: calc(100% - 7px);
+        }
+    }
+
+    .block-zones {
+        display: block;
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .variable-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: calc(100% - 5px);
+
+        .tag-link-btn {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px 0 0 2px;
+            background-color: var(--formInputBackground);
+            z-index: 1;
+
+            button {
+                line-height: 28px;
+                height: 28px;
+                width: 28px;
+                padding: 0;
+            }
+
+            .mat-mdc-icon-button.mat-mdc-button-base {
+                width: 28px !important;
+                height: 28px !important;
+                padding: 0 !important;
+            }
+        }
+
+        input {
+            width: 100%;
+            padding-left: 30px;
+        }
+    }
+}

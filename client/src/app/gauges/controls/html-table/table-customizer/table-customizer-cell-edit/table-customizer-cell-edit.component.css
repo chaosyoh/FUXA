@@ -1,0 +1,26 @@
+:host ::ng-deep .mat-dialog-content {
+    max-height: 75vh;
+    overflow: auto;
+}
+
+:host ::ng-deep .mat-tab-body-wrapper {
+    flex: 1;
+}
+
+.mat-tab-container {
+    padding: 10px 5px;
+}
+
+.button-event-item {
+    border: 1px solid #ddd;
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    position: relative;
+}
+
+.remove-event-btn {
+    position: absolute;
+    right: 0;
+    top: 4px;
+}

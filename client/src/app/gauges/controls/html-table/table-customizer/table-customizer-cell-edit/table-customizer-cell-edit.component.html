@@ -1,0 +1,357 @@
+<div>
+    <h1 *ngIf="data.type === cellType.column" mat-dialog-title class="dialog-title" mat-dialog-draggable>{{'table.column-dialog-title' | translate}}</h1>
+    <h1 *ngIf="data.type === cellType.row" mat-dialog-title class="dialog-title" mat-dialog-draggable>{{'table.row-dialog-title' | translate}}</h1>
+    <mat-icon (click)="onNoClick()" class="dialog-close-btn">clear</mat-icon>
+    <div mat-dialog-content>
+        <!-- Data table row cells: use tab layout (properties + actions) -->
+        <mat-tab-group *ngIf="data.table === tableType.data && data.type === cellType.row">
+            <mat-tab label="{{'gauges.property-props' | translate}}">
+                <div class="mat-tab-container">
+                    <div style="display: block; margin-top: 10px;">
+                        <div class="my-form-field" style="display: inline-block">
+                            <span>{{'table.cell-row-type' | translate}}</span>
+                            <mat-select [(value)]="data.cell.type" (selectionChange)="onCellTypeChange()" style="width: 200px">
+                                <mat-option [value]="columnType.label">
+                                    {{'table.property-column-label' | translate}}</mat-option>
+                                <mat-option [value]="columnType.variable">
+                                    {{'table.property-column-variable' | translate}}</mat-option>
+                                <mat-option [value]="columnType.device">
+                                    {{'table.property-column-device' | translate}}</mat-option>
+                                <mat-option [value]="columnType.timestamp">
+                                    {{'table.property-column-timestamp' | translate}}</mat-option>
+                                <mat-option [value]="columnType.input">
+                                    {{'table.property-column-input' | translate}}</mat-option>
+                                <mat-option [value]="columnType.button">
+                                    {{'table.property-column-button' | translate}}</mat-option>
+                                <mat-option [value]="columnType.switch">
+                                    {{'table.property-column-switch' | translate}}</mat-option>
+                                <mat-option [value]="columnType.select">
+                                    {{'table.property-column-select' | translate}}</mat-option>
+                            </mat-select>
+                        </div>
+                        <ng-container *ngIf="data.cell.type === columnType.timestamp">
+                            <div class="my-form-field lbk ml15">
+                                <span>{{ dateTimeFormatsLabel }}</span>
+                                <input [(ngModel)]="data.cell.valueFormat" type="text" style="width: 205px">
+                            </div>
+                        </ng-container>
+                        <div *ngIf="data.cell.type === columnType.label" class="my-form-field" style="display: inline-block; margin-left: 16px;">
+                            <span>{{'table.cell-text' | translate}}</span>
+                            <input [(ngModel)]="data.cell.label" type="text" style="width: 205px">
+                        </div>
+                        <div *ngIf="data.cell.type === columnType.variable" class="my-form-field" style="display: inline-block; margin-left: 16px;">
+                            <span>{{'table.cell-value-format' | translate}}</span>
+                            <input [(ngModel)]="data.cell.valueFormat" type="text" style="width: 205px">
+                        </div>
+                    </div>
+                    <div *ngIf="data.cell.type === columnType.variable || data.cell.type === columnType.device" class="my-form-field variable-input">
+                        <flex-variable [data]="devicesValues" (onchange)="onSetVariable($event)" [variableId]="data.cell.variableId" [bitmask]="data.cell.bitmask" [withStaticValue]="false"
+                            [withBitmask]="true">
+                        </flex-variable>
+                    </div>
+                    <!-- Input cell configuration -->
+                    <ng-container *ngIf="data.cell.type === columnType.input">
+                        <div class="my-form-field variable-input">
+                            <flex-variable [data]="devicesValues" (onchange)="onSetVariable($event)" [variableId]="data.cell.variableId" [bitmask]="data.cell.bitmask" [withStaticValue]="false"
+                                [withBitmask]="true">
+                            </flex-variable>
+                        </div>
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field" style="display: inline-block; width: 140px;">
+                                <span>{{'gauges.property-input-type' | translate}}</span>
+                                <mat-select [(value)]="data.cell.inputOptions.type" style="width: 140px">
+                                    <mat-option [value]="inputOptionType.number">
+                                        {{'gauges.property-input-type-number' | translate}}</mat-option>
+                                    <mat-option [value]="inputOptionType.text">
+                                        {{'gauges.property-input-type-text' | translate}}</mat-option>
+                                    <mat-option [value]="inputOptionType.date">
+                                        {{'gauges.property-input-type-date' | translate}}</mat-option>
+                                    <mat-option [value]="inputOptionType.time">
+                                        {{'gauges.property-input-type-time' | translate}}</mat-option>
+                                    <mat-option [value]="inputOptionType.datetime">
+                                        {{'gauges.property-input-type-datetime' | translate}}</mat-option>
+                                </mat-select>
+                            </div>
+                            <ng-container *ngIf="isInputNumber()">
+                                <div class="my-form-field ml15" style="display: inline-block;">
+                                    <span>{{'gauges.property-input-min' | translate}}</span>
+                                    <input numberOnly [(ngModel)]="data.cell.inputOptions.min" type="number" style="width: 80px">
+                                </div>
+                                <div class="my-form-field ml15" style="display: inline-block;">
+                                    <span>{{'gauges.property-input-max' | translate}}</span>
+                                    <input numberOnly [(ngModel)]="data.cell.inputOptions.max" type="number" style="width: 80px">
+                                </div>
+                            </ng-container>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'table.cell-input-placeholder' | translate}}</span>
+                                <input [(ngModel)]="data.cell.inputOptions.placeholder" type="text" style="width: 150px">
+                            </div>
+                        </div>
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field" style="display: inline-block;">
+                                <span>{{'gauges.property-update-enabled' | translate}}</span>
+                                <mat-slide-toggle color="primary" [(ngModel)]="data.cell.inputOptions.updated" class="ml15"></mat-slide-toggle>
+                            </div>
+                            <div class="my-form-field ml20" style="display: inline-block;">
+                                <span>{{'gauges.property-input-readonly' | translate}}</span>
+                                <mat-slide-toggle color="primary" [(ngModel)]="data.cell.inputOptions.readonly" class="ml15"></mat-slide-toggle>
+                            </div>
+                        </div>
+                    </ng-container>
+                    <!-- Button cell configuration -->
+                    <ng-container *ngIf="data.cell.type === columnType.button">
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field" style="display: inline-block;">
+                                <span>{{'table.cell-button-text' | translate}}</span>
+                                <input [(ngModel)]="data.cell.buttonOptions.text" type="text" style="width: 200px">
+                            </div>
+                        </div>
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field section-inline-color color-field" style="display: inline-block;">
+                                <span>{{'table.cell-button-bg-color' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.buttonOptions.style.backgroundColor" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.buttonOptions.style.backgroundColor" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                            <div class="my-form-field section-inline-color color-field ml15" style="display: inline-block;">
+                                <span>{{'table.cell-button-text-color' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.buttonOptions.style.color" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.buttonOptions.style.color" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'table.cell-button-border-radius' | translate}}</span>
+                                <input [(ngModel)]="data.cell.buttonOptions.style.borderRadius" type="text" style="width: 80px" placeholder="3px">
+                            </div>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'table.cell-button-border' | translate}}</span>
+                                <input [(ngModel)]="data.cell.buttonOptions.style.border" type="text" style="width: 120px" placeholder="1px solid #ccc">
+                            </div>
+                        </div>
+                    </ng-container>
+                    <!-- Switch cell configuration -->
+                    <ng-container *ngIf="data.cell.type === columnType.switch">
+                        <div class="my-form-field variable-input">
+                            <flex-variable [data]="devicesValues" (onchange)="onSetVariable($event)" [variableId]="data.cell.variableId" [bitmask]="data.cell.bitmask" [withStaticValue]="false"
+                                [withBitmask]="true">
+                            </flex-variable>
+                        </div>
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field" style="display: inline-block;">
+                                <span>{{'html-switch.property-off-value' | translate}}</span>
+                                <input numberOnly [(ngModel)]="data.cell.switchOptions.offValue" type="text" style="width: 80px">
+                            </div>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-on-value' | translate}}</span>
+                                <input numberOnly [(ngModel)]="data.cell.switchOptions.onValue" type="text" style="width: 80px">
+                            </div>
+                            <div class="my-form-field section-inline-color color-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-off-background' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.switchOptions.offBackground" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.switchOptions.offBackground" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                            <div class="my-form-field section-inline-color color-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-on-background' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.switchOptions.onBackground" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.switchOptions.onBackground" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                        </div>
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field section-inline-color color-field" style="display: inline-block;">
+                                <span>{{'html-switch.property-off-slider-color' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.switchOptions.offSliderColor" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.switchOptions.offSliderColor" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                            <div class="my-form-field section-inline-color color-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-on-slider-color' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.switchOptions.onSliderColor" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.switchOptions.onSliderColor" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-off-text' | translate}}</span>
+                                <input [(ngModel)]="data.cell.switchOptions.offText" type="text" style="width: 80px">
+                            </div>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-on-text' | translate}}</span>
+                                <input [(ngModel)]="data.cell.switchOptions.onText" type="text" style="width: 80px">
+                            </div>
+                        </div>
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field section-inline-color color-field" style="display: inline-block;">
+                                <span>{{'html-switch.property-off-text-color' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.switchOptions.offTextColor" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.switchOptions.offTextColor" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                            <div class="my-form-field section-inline-color color-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-on-text-color' | translate}}</span>
+                                <input [(colorPicker)]="data.cell.switchOptions.onTextColor" [cpAlphaChannel]="'never'" class="input-color"
+                                    [style.background]="data.cell.switchOptions.onTextColor" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                    [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                    style="width: 88px" [cpPosition]="'auto'" />
+                            </div>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-radius' | translate}}</span>
+                                <input numberOnly [(ngModel)]="data.cell.switchOptions.radius" type="number" style="width: 60px" min="0" max="100">
+                            </div>
+                            <div class="my-form-field ml15" style="display: inline-block;">
+                                <span>{{'html-switch.property-font-size' | translate}}</span>
+                                <input numberOnly [(ngModel)]="data.cell.switchOptions.fontSize" type="number" style="width: 60px" min="0" max="50">
+                            </div>
+                        </div>
+                    </ng-container>
+                    <!-- Select cell configuration -->
+                    <ng-container *ngIf="data.cell.type === columnType.select">
+                        <div class="my-form-field variable-input">
+                            <flex-variable [data]="devicesValues" (onchange)="onSetVariable($event)" [variableId]="data.cell.variableId" [bitmask]="data.cell.bitmask" [withStaticValue]="false"
+                                [withBitmask]="true">
+                            </flex-variable>
+                        </div>
+                        <div style="display: block; margin-top: 10px;">
+                            <div class="my-form-field" style="display: inline-block;">
+                                <span>{{'gauges.property-input-readonly' | translate}}</span>
+                                <mat-slide-toggle color="primary" [(ngModel)]="data.cell.selectOptions.readonly" class="ml15"></mat-slide-toggle>
+                            </div>
+                        </div>
+                        <div style="display: block; margin-top: 15px;">
+                            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: bold;">{{'table.cell-select-items' | translate}}</span>
+                                <button mat-icon-button (click)="onAddSelectItem()" style="margin-left: 8px;">
+                                    <mat-icon>add_circle_outline</mat-icon>
+                                </button>
+                            </div>
+                            <div *ngFor="let item of data.cell.selectOptions?.items; let idx = index"
+                                 class="button-event-item">
+                                <div class="my-form-field" style="display: inline-block;">
+                                    <span>{{'table.cell-select-value' | translate}}</span>
+                                    <input numberOnly [(ngModel)]="item.value" type="text" style="width: 80px">
+                                </div>
+                                <div class="my-form-field ml15" style="display: inline-block;">
+                                    <span>{{'table.cell-select-text' | translate}}</span>
+                                    <input [(ngModel)]="item.text" type="text" style="width: 140px">
+                                </div>
+                                <div class="my-form-field section-inline-color color-field ml15" style="display: inline-block;">
+                                    <span>{{'table.cell-select-color' | translate}}</span>
+                                    <input [(colorPicker)]="item.color" [cpAlphaChannel]="'never'" class="input-color"
+                                        [style.background]="item.color" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                        [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                        style="width: 88px" [cpPosition]="'auto'" />
+                                </div>
+                                <div class="my-form-field section-inline-color color-field ml15" style="display: inline-block;">
+                                    <span>{{'table.cell-select-stroke' | translate}}</span>
+                                    <input [(colorPicker)]="item.stroke" [cpAlphaChannel]="'never'" class="input-color"
+                                        [style.background]="item.stroke" [cpPresetColors]="[]" [cpOKButton]="true" [cpCancelButton]="true"
+                                        [cpCancelButtonText]="'Cancel'" [cpOKButtonText]="'OK'" [cpOKButtonClass]="'cpOKButtonClass'" [cpCancelButtonClass]="'cpCancelButtonClass'"
+                                        style="width: 88px" [cpPosition]="'auto'" />
+                                </div>
+                                <button mat-icon-button (click)="onRemoveSelectItem(idx)" class="remove-event-btn">
+                                    <mat-icon>delete</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </ng-container>
+                </div>
+            </mat-tab>
+            <!-- Events tab (for input/button types) -->
+            <mat-tab *ngIf="data.cell.type === columnType.input" label="{{'gauges.property-events' | translate}}">
+                <div class="mat-tab-container">
+                    <flex-event [property]="inputEventProperty" [data]="inputEventData" [views]="inputEventData.views" [scripts]="scripts" [inputs]="[]" #inputFlexEvent>
+                    </flex-event>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="data.cell.type === columnType.button" label="{{'gauges.property-events' | translate}}">
+                <div class="mat-tab-container">
+                    <flex-event [property]="buttonEventProperty" [data]="buttonEventData" [views]="buttonEventData.views" [scripts]="scripts" [inputs]="[]" #buttonFlexEvent>
+                    </flex-event>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="data.cell.type === columnType.switch" label="{{'gauges.property-events' | translate}}">
+                <div class="mat-tab-container">
+                    <flex-event [property]="switchEventProperty" [data]="switchEventData" [views]="switchEventData.views" [scripts]="scripts" [inputs]="[]" #switchFlexEvent>
+                    </flex-event>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="data.cell.type === columnType.select" label="{{'gauges.property-events' | translate}}">
+                <div class="mat-tab-container">
+                    <flex-event [property]="selectEventProperty" [data]="selectEventData" [views]="selectEventData.views" [scripts]="scripts" [inputs]="[]" #selectFlexEvent>
+                    </flex-event>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'gauges.property-actions' | translate}}">
+                <div class="mat-tab-container">
+                    <div class="toolbox">
+                        <button mat-icon-button (click)="onAddAction()">
+                            <mat-icon>add_circle_outline</mat-icon>
+                        </button>
+                    </div>
+                    <div style="overflow: visible; width: 100%;">
+                        <flex-action [data]="actionData" [property]="actionProperty" [withBitmask]="true" #flexaction style="padding-bottom: 5px">
+                        </flex-action>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+
+        <!-- Column cells and history table cells: plain layout (no tabs) -->
+        <ng-container *ngIf="!(data.table === tableType.data && data.type === cellType.row)">
+            <div *ngIf="data.type === cellType.column" class="my-form-field" style="display: block;">
+                <span>{{'table.cell-column-name' | translate}}</span>
+                <input [(ngModel)]="data.cell.label" type="text" style="width: 200px">
+            </div>
+            <div style="display: block; margin-top: 10px;">
+                <div class="my-form-field" style="display: inline-block">
+                    <span *ngIf="data.type === cellType.column">{{'table.cell-column-type' | translate}}</span>
+                    <span *ngIf="data.type === cellType.row">{{'table.cell-row-type' | translate}}</span>
+                    <mat-select [(value)]="data.cell.type" style="width: 200px">
+                        <mat-option *ngIf="data.table === tableType.data" [value]="columnType.label">
+                            {{'table.property-column-label' | translate}}</mat-option>
+                        <mat-option *ngIf="!(data.table === tableType.data && data.type === cellType.column)" [value]="columnType.variable">
+                            {{'table.property-column-variable' | translate}}</mat-option>
+                        <mat-option *ngIf="!(data.table === tableType.data && data.type === cellType.column)" [value]="columnType.device">
+                            {{'table.property-column-device' | translate}}</mat-option>
+                        <mat-option [value]="columnType.timestamp">
+                            {{'table.property-column-timestamp' | translate}}</mat-option>
+                    </mat-select>
+                </div>
+                <ng-container *ngIf="data.cell.type === columnType.timestamp">
+                    <div class="my-form-field lbk ml15">
+                        <span>{{ dateTimeFormatsLabel }}</span>
+                        <input [(ngModel)]="data.cell.valueFormat" type="text" style="width: 205px">
+                        <ng-container *ngIf="isHistory()">
+                            <div class="lbk ml5">*</div>
+                            <input numberOnly class="lbk ml5" [(ngModel)]="data.cell.timeInterval" type="number" style="width: 70px">
+                        </ng-container>
+                    </div>
+                </ng-container>
+                <div *ngIf="data.type === cellType.row && data.cell.type === columnType.label" class="my-form-field" style="display: inline-block; margin-left: 16px;">
+                    <span>{{'table.cell-text' | translate}}</span>
+                    <input [(ngModel)]="data.cell.label" type="text" style="width: 205px">
+                </div>
+                <div *ngIf="data.cell.type === columnType.variable" class="my-form-field" style="display: inline-block; margin-left: 16px;">
+                    <span>{{'table.cell-value-format' | translate}}</span>
+                    <input [(ngModel)]="data.cell.valueFormat" type="text" style="width: 205px">
+                </div>
+            </div>
+            <div *ngIf="data.cell.type === columnType.variable || data.cell.type === columnType.device" class="my-form-field variable-input">
+                <flex-variable [data]="devicesValues" (onchange)="onSetVariable($event)" [variableId]="data.cell.variableId" [bitmask]="data.cell.bitmask" [withStaticValue]="false"
+                    [withBitmask]="true">
+                </flex-variable>
+            </div>
+        </ng-container>
+    </div>
+    <div mat-dialog-actions class="dialog-action">
+        <button mat-raised-button (click)="onNoClick()">{{'dlg.cancel' | translate}}</button>
+        <button mat-raised-button color="primary" (click)="onOkClick()">{{'dlg.ok' | translate}}</button>
+    </div>
+</div>

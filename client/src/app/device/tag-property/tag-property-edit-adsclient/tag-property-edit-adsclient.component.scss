@@ -1,0 +1,25 @@
+:host {
+    .container {
+        width: 750px;
+    }
+    .dialog-content-columns {
+        display: flex;
+        gap: 24px;
+    }
+    .column-left {
+        flex: 1;
+        min-width: 0;
+    }
+    .column-right {
+        flex: 1;
+        min-width: 0;
+        border-left: 1px solid rgba(0, 0, 0, 0.12);
+        padding-left: 24px;
+    }
+    .item-block {
+        display: block;
+        mat-select, input, span {
+            width:calc(100% - 5px);
+        }
+    }
+}

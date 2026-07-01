@@ -1,0 +1,128 @@
+<div class="options-section">
+    <div class="block mt10 mb15 flex" style="text-align: center;">
+        <div class="my-form-field w100">
+            <span>{{'device.tag-daq-enabled' | translate}}</span>
+            <mat-slide-toggle color="primary" [formControl]="formGroup.controls.enabled"></mat-slide-toggle>
+        </div>
+        <div class="my-form-field w100">
+            <span>{{'device.tag-daq-changed' | translate}}</span>
+            <mat-slide-toggle color="primary" [formControl]="formGroup.controls.changed"></mat-slide-toggle>
+        </div>
+        <div class="my-form-field w100">
+            <span>{{'device.tag-daq-restored' | translate}}</span>
+            <mat-slide-toggle color="primary" [formControl]="formGroup.controls.restored"></mat-slide-toggle>
+        </div>
+    </div>
+    <div class="my-form-field item-block">
+        <span>{{'device.tag-daq-interval' | translate}}</span>
+        <input numberOnly [formControl]="formGroup.controls.interval" min="0" type="number">
+    </div>
+    <div class="my-form-field item-block mt10">
+        <span>{{'device.tag-format' | translate}}</span>
+        <input numberOnly [formControl]="formGroup.controls.format" min="0" max="10" type="number">
+    </div>
+    <div class="my-form-field item-block mt10">
+        <span>{{'device.tag-deadband' | translate}}</span>
+        <input numberOnly [formControl]="formGroup.controls.deadband" type="number">
+    </div>
+    <div *ngIf="!isFuxaServer">
+        <div class="my-form-field item-block mt10">
+            <span>{{'device.tag-scale' | translate}}</span>
+            <mat-select [formControl]="formGroup.controls.scaleMode">
+                <mat-option *ngFor="let ev of scaleModeType | enumToArray"
+                            [attr.title]="(ev.value + '-tooltip') | translate"
+                            [value]="ev.key">
+                    {{ ev.value | translate }}
+                </mat-option>
+            </mat-select>
+        </div>
+        <ng-container [ngSwitch]="formGroup.controls.scaleMode.value">
+            <ng-container *ngSwitchCase="'convertDateTime'">
+                <div class="my-form-field item-block mt5">
+                    <span>{{'device.tag-convert-datetime-format' | translate}}</span>
+                    <input [formControl]="formGroup.controls.dateTimeFormat">
+                </div>
+            </ng-container>
+            <ng-container *ngSwitchCase="'convertTickTime'">
+                <div class="my-form-field item-block mt5">
+                    <span>{{'device.tag-convert-ticktime-format' | translate}}</span>
+                    <input [formControl]="formGroup.controls.dateTimeFormat">
+                </div>
+            </ng-container>
+            <ng-container *ngSwitchCase="'linear'">
+                <div class="block mt5">
+                    <div class="my-form-field">
+                        <span>{{'device.tag-raw-low' | translate}}</span>
+                        <input [formControl]="formGroup.controls.rawLow" type="number" style="width:140px">
+                    </div>
+                    <div class="my-form-field ml-8">
+                        <span>{{'device.tag-raw-high' | translate}}</span>
+                        <input [formControl]="formGroup.controls.rawHigh" type="number" style="width:140px">
+                    </div>
+                </div>
+                <div class="block mt5">
+                    <div class="my-form-field">
+                        <span>{{'device.tag-scaled-low' | translate}}</span>
+                        <input [formControl]="formGroup.controls.scaledLow" type="number" style="width:140px">
+                    </div>
+                    <div class="my-form-field ml-8">
+                        <span>{{'device.tag-scaled-high' | translate}}</span>
+                        <input [formControl]="formGroup.controls.scaledHigh" type="number" style="width:140px">
+                    </div>
+                </div>
+            </ng-container>
+            <ng-container *ngSwitchCase="'expression'">
+                <div class="my-form-field item-block mt5">
+                    <span>{{'device.tag-scale-read-expression' | translate}}</span>
+                    <input [formControl]="formGroup.controls.scaleReadExpression">
+                </div>
+                <div class="my-form-field item-block mt5">
+                    <span>{{'device.tag-scale-write-expression' | translate}}</span>
+                    <input [formControl]="formGroup.controls.scaleWriteExpression">
+                </div>
+            </ng-container>
+        </ng-container>
+        <!-- TODO: temporarily hidden scale read/write script fields
+        <div class="my-form-field item-block mt10">
+            <span>{{'device.tag-scale-read-script' | translate}}</span>
+            <mat-select [formControl]="formGroup.controls.scaleReadFunction"
+                        matTooltip="{{'device.tag-scale-read-script-tooltip' | translate}}">
+                <mat-option (click)="formGroup.controls.scaleReadFunction.reset()"></mat-option>
+                <mat-option *ngFor="let script of scripts; index as i" [value]="script.id">{{script.name}}</mat-option>
+            </mat-select>
+        </div>
+        <div *ngIf="configedReadParams[formGroup.value.scaleReadFunction]?.length > 0"
+                class="my-form-field block mt5 ml15">
+            <span>{{'device.tag-scale-read-script-params' | translate}}</span>
+            <div matTooltip="{{'device.tag-scale-script-params-tooltip' | translate}}">
+                <div *ngFor="let item of configedReadParams[formGroup.value.scaleReadFunction]"
+                        class="item-param mt5">
+                    <input [value]="item.name" matTooltip="item.name" type="text" readonly [disabled]="true">
+                    <input [(ngModel)]="item.value" class="ml5"
+                            [ngModelOptions]="{standalone: true}">
+                </div>
+            </div>
+        </div>
+        <div class="my-form-field item-block mt10">
+            <span>{{'device.tag-scale-write-script' | translate}}</span>
+            <mat-select [formControl]="formGroup.controls.scaleWriteFunction"
+                        matTooltip="{{'device.tag-scale-write-script-tooltip' | translate}}">
+                <mat-option (click)="formGroup.controls.scaleWriteFunction.reset()"></mat-option>
+                <mat-option *ngFor="let script of scripts; index as i" [value]="script.id">{{script.name}}</mat-option>
+            </mat-select>
+        </div>
+        <div *ngIf="configedWriteParams[formGroup.value.scaleWriteFunction]?.length > 0"
+                class="my-form-field block mt5 ml15">
+            <span>{{'device.tag-scale-write-script-params' | translate}}</span>
+            <div matTooltip="{{'device.tag-scale-script-params-tooltip' | translate}}">
+                <div *ngFor="let item of configedWriteParams[formGroup.value.scaleWriteFunction]"
+                        class="item-param mt5">
+                    <input [value]="item.name" matTooltip="item.name" type="text" readonly [disabled]="true">
+                    <input [(ngModel)]="item.value" class="ml5"
+                            [ngModelOptions]="{standalone: true}">
+                </div>
+            </div>
+        </div>
+        -->
+    </div>
+</div>

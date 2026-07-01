@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Drivers/">
+    <Project Path="OpcUA/OpcUA.csproj" Id="a2cce10b-c928-4d5b-a065-cafa41ff080f" />
+    <Project Path="Device.ModbusTCP/Device.ModbusTCP.csproj" Id="fe26410e-ca58-41d3-8ed7-4d6d126551cb" />
+    <Project Path="Device.ModbusRTU/Device.ModbusRTU.csproj" />
+    <Project Path="Device.S7/Device.S7.csproj" />
+    <Project Path="Device.MQTT/Device.MQTT.csproj" />
+    <Project Path="Device.WebAPI/Device.WebAPI.csproj" />
+  </Folder>
+  <Project Path="Core/Core.csproj" />
+  <Project Path="Runtime/Runtime.csproj" />
+  <Project Path="Server/Server.csproj" />
+  <Project Path="Test/Test.csproj" />
+</Solution>
