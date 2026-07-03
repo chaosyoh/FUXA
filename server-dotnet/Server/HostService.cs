@@ -1,7 +1,6 @@
 using Core.Const;
 using Core.Quartz;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Hosting;
 using Runtime;
 using Runtime.Alarms;
 using Runtime.ApiKeys;
@@ -69,14 +68,6 @@ public class HostService : IHostedService
 
         // Initialize all database tables
         _logger.LogInformation("Initializing database tables...");
-        _projectStorage.InitTables();
-        _alarmStorage.InitTables();
-        _notifyStorage.InitTables();
-        _schedulerStorage.InitTables();
-        _apiKeyStorage.InitTables();
-        _userService.InitTables();
-        _currentstorage.InitTables();
-        //_questDb.InitTables();
 
         _logger.LogInformation("GetProjectData");
         await _projectService.Load();

@@ -15,19 +15,6 @@ public class AlarmStorage
         _db = db;
     }
 
-    public void InitTables()
-    {
-        try
-        {
-            _db.CodeFirst.InitTables<AlarmRecord>();
-            _db.CodeFirst.InitTables<AlarmChronicle>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "alarm storage table initialization failed!");
-        }
-    }
-
     public Task<List<AlarmRecord>> GetAlarms()
     {
         return _db.Queryable<AlarmRecord>().ToListAsync();

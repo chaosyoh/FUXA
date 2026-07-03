@@ -31,20 +31,6 @@ public class UserService
         _db = db;
     }
 
-    public void InitTables()
-    {
-        try
-        {
-            _db.CodeFirst.InitTables<User>();
-            _db.CodeFirst.InitTables<Role>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "user table initialization failed!");
-        }
-    }
-
-
     public async Task SetDefault()
     {
         var user = new User

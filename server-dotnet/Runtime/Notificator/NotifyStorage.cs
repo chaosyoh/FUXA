@@ -15,18 +15,6 @@ public class NotifyStorage
         _db = db;
     }
 
-    public void InitTables()
-    {
-        try
-        {
-            _db.CodeFirst.InitTables<NotificationChronicle>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "notification storage table initialization failed!");
-        }
-    }
-
     public Task<List<NotificationChronicle>> GetNotificationsHistory(long from, long to)
     {
         return _db.Queryable<NotificationChronicle>()

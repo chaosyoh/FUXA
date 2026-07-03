@@ -17,18 +17,6 @@ public class Currentstorage
         _db = db;
     }
 
-    public void InitTables()
-    {
-        try
-        {
-            _db.CodeFirst.InitTables<TagStorage>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "currentstorage table initialization failed!");
-        }
-    }
-
     public async Task WriteValues()
     {
         var list = DataQueue.Select(x => new TagStorage

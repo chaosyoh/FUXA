@@ -22,18 +22,6 @@ public class SchedulerStorage
         _db = db;
     }
 
-    public void InitTables()
-    {
-        try
-        {
-            _db.CodeFirst.InitTables<SchedulerEntity>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "scheduler storage table initialization failed!");
-        }
-    }
-
     public async Task<SchedulerData?> GetSchedulerData(string schedulerId)
     {
         var entity = await _db.Queryable<SchedulerEntity>()

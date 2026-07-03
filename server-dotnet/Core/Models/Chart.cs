@@ -1,20 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
-namespace Core.Models
+namespace Core.Models;
+
+public class Chart
 {
-    public class Chart
-    {
-        public string Id { get; set; } = string.Empty;
+    public string Id { get; set; } = string.Empty;
 
-        public string Name { get; set; }  = string.Empty;
-
-        public List<ChartLine> Lines { get; set; } = new List<ChartLine>();
-
-
-
-    }
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }

@@ -15,18 +15,6 @@ public class ApiKeyStorage
         _db = db;
     }
 
-    public void InitTables()
-    {
-        try
-        {
-            _db.CodeFirst.InitTables<ApiKey>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "ApiKey storage table initialization failed");
-        }
-    }
-
     public async Task<List<ApiKey>> GetApiKeys()
     {
         try

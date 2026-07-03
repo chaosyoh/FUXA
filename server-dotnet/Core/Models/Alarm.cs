@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace Core.Models;
 
 public class Alarm
@@ -10,4 +14,7 @@ public class Alarm
     public AlarmSubProperty? Info { get; set; }
     public AlarmSubActions? Actions { get; set; }
     public string? Value { get; set; }
+
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }

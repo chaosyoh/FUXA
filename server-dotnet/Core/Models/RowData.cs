@@ -5,15 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using SqlSugar;
 
-namespace Core.Models
+namespace Core.Models;
+
+public class RowData
 {
-    public class RowData
-    {
-        [SugarColumn(IsPrimaryKey = true)]
-        public string Name { get; set; } = string.Empty;
+    [SugarColumn(IsPrimaryKey = true)]
+    public string Name { get; set; } = string.Empty;
 
-        public string Value { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 
 
-    }
 }
