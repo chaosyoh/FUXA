@@ -11,7 +11,7 @@ namespace Runtime.Notificator;
 public class NotificatorService : INotificatorService
 {
     private readonly ILogger<NotificatorService> _logger;
-    private readonly INotifyStorage _storage;
+    private readonly NotifyStorage _storage;
     private readonly IProjectService _project;
     private readonly IAlarmService _alarmService;
 
@@ -21,7 +21,7 @@ public class NotificatorService : INotificatorService
 
     public NotificatorService(
         ILogger<NotificatorService> logger,
-        INotifyStorage storage,
+        NotifyStorage storage,
         IProjectService project,
         IAlarmService alarmService)
     {

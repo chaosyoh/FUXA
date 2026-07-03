@@ -18,7 +18,7 @@ namespace Runtime.Project;
 public class ProjectService : IProjectService
 {
     private readonly ILogger<ProjectService> _logger;
-    private readonly IProjectStorage _prjStorage;
+    private readonly ProjectStorage _prjStorage;
 
     private ProjectData data = new ProjectData();
 
@@ -26,7 +26,7 @@ public class ProjectService : IProjectService
 
     private static readonly JsonSerializerOptions _options = JsonHelper.Default;
 
-    public ProjectService(ILogger<ProjectService> logger, IProjectStorage prjStorage)
+    public ProjectService(ILogger<ProjectService> logger, ProjectStorage prjStorage)
     {
         _logger = logger;
         _prjStorage = prjStorage;
@@ -240,6 +240,8 @@ public class ProjectService : IProjectService
         {
             var device = value.Deserialize<Device>(_options);
             if (device == null) return;
+            if (device.Id == "0")
+                throw new InvalidOperationException("Internal device cannot be deleted");
             toremove = true;
             section.Table = TableType.DEVICES;
             section.Name = device.Id;

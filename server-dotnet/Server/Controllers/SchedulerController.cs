@@ -9,9 +9,9 @@ namespace Server.Controllers;
 public class SchedulerController : ControllerBase
 {
     private readonly ILogger<SchedulerController> _logger;
-    private readonly ISchedulerStorage _schedulerStorage;
+    private readonly SchedulerStorage _schedulerStorage;
 
-    public SchedulerController(ILogger<SchedulerController> logger, ISchedulerStorage schedulerStorage)
+    public SchedulerController(ILogger<SchedulerController> logger, SchedulerStorage schedulerStorage)
     {
         _logger = logger;
         _schedulerStorage = schedulerStorage;

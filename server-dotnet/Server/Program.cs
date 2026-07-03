@@ -27,9 +27,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var services = builder.Services;
-var appSettings = AppSettings.GetSettings();
+var appSettings = AppSettings.Initialize(builder.Configuration);
 services.AddSingleton(appSettings);
-services.AddSingleton<ISqlSugarProvider, Runtime.Storage.SqlSugarProvider>();
+
+// SqlSugar provider & shared client
+services.AddSingleton<Runtime.Storage.SqlSugarProvider>();
+services.AddSingleton(sp => sp.GetRequiredService<Runtime.Storage.SqlSugarProvider>().GetClient());
+
 services.AddSignalR(options =>
 {
     // Server sends ping every 15s to keep connection alive
@@ -61,39 +65,34 @@ builder.Services.AddSingleton(daqChannel.Writer);
 // HTTP Client for webhook notifications
 services.AddHttpClient();
 
-// Project & User services
-services.AddSingleton<IProjectStorage, ProjectStorage>();
-services.AddSingleton<IProjectService, ProjectService>();
+// Storage classes (no interfaces, direct concrete types)
+services.AddSingleton<ProjectStorage>();
+services.AddSingleton<Currentstorage>();
+services.AddSingleton<QuestDb>();
+services.AddSingleton<AlarmStorage>();
+services.AddSingleton<NotifyStorage>();
+services.AddSingleton<SchedulerStorage>();
+services.AddSingleton<ApiKeyStorage>();
 services.AddSingleton<UserService>();
+
+// Service classes
+services.AddSingleton<ProjectService>();
+services.AddSingleton<IProjectService>(sp => sp.GetRequiredService<ProjectService>());
 services.AddSingleton<TagSubscribeService>();
+services.AddSingleton<DaqStorageService>();
+services.AddSingleton<AlarmService>();
+services.AddSingleton<IAlarmService>(sp => sp.GetRequiredService<AlarmService>());
+services.AddSingleton<NotificatorService>();
+services.AddSingleton<INotificatorService>(sp => sp.GetRequiredService<NotificatorService>());
 
-// Storage services
-services.AddSingleton<ICurrentstorage, Currentstorage>();
-services.AddSingleton<IStorage, SqliteDaqStorage>();
-services.AddSingleton<IDaqStorageService, DaqStorageService>();
-
-// Alarm services
-services.AddSingleton<IAlarmStorage, AlarmStorage>();
-services.AddSingleton<IAlarmService, AlarmService>();
-
-// Notification services
-services.AddSingleton<INotifyStorage, NotifyStorage>();
-services.AddSingleton<INotificatorService, NotificatorService>();
-
-// Script service (stub)
+// Script service
 services.AddSingleton<IScriptService, ScriptService>();
-
-// Scheduler services
-services.AddSingleton<ISchedulerStorage, SchedulerStorage>();
 
 // Plugin service
 services.AddSingleton<IPluginService, PluginService>();
 
 // Resource service
 services.AddSingleton<IResourceService, ResourceService>();
-
-// ApiKey storage
-services.AddSingleton<IApiKeyStorage, ApiKeyStorage>();
 
 // Device XLS import/export service
 services.AddSingleton<DeviceXlsService>();
@@ -118,7 +117,7 @@ services.AddSingleton<HeartbeatJob>();
 services.AddSingleton<AlarmCheckJob>();
 services.AddSingleton<NotifyCheckJob>();
 services.AddSingleton<RetentionCleanupJob>();
-builder.WebHost.UseUrls("http://*:1881");
+builder.WebHost.UseUrls($"http://*:{appSettings.UiPort}");
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseRouting();

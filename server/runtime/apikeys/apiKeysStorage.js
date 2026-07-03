@@ -36,7 +36,17 @@ async function _bind() {
             var dbfile = path.join(settings.workDir, 'apikeys.fuxap.db');
             dbfileExist = await adapter.init({ dbFile: dbfile, logger, moduleName: 'apiKeysStorage' });
         } else {
-            dbfileExist = await adapter.init({ logger, moduleName: 'apiKeysStorage' });
+            await adapter.init({ logger, moduleName: 'apiKeysStorage' });
+            // For non-SQLite engines, check if data already exists in DB
+            try {
+                const checkSql = engine === 'mssql'
+                    ? 'SELECT TOP 1 name FROM apikeys'
+                    : 'SELECT name FROM apikeys LIMIT 1';
+                const rows = await adapter.all(checkSql);
+                dbfileExist = rows && rows.length > 0;
+            } catch (e) {
+                dbfileExist = false;
+            }
         }
         const ddl = dbAdapter.getDDL(engine, 'apikeys');
         if (engine === 'sqlite') {

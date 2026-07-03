@@ -11,10 +11,10 @@ namespace Server.Controllers;
 public class DaqController : ControllerBase
 {
     private readonly ILogger<DaqController> _logger;
-    private readonly IDaqStorageService _daqService;
+    private readonly DaqStorageService _daqService;
     private readonly IProjectService _projectService;
 
-    public DaqController(ILogger<DaqController> logger, IDaqStorageService daqService, IProjectService projectService)
+    public DaqController(ILogger<DaqController> logger, DaqStorageService daqService, IProjectService projectService)
     {
         _logger = logger;
         _daqService = daqService;

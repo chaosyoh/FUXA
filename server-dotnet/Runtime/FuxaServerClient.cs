@@ -20,6 +20,10 @@ public class FuxaServerClient : DeviceBase
     // Calculated tags with compiled expressions
     private readonly Dictionary<string, CalculatedTagInfo> _calculatedTags = new();
 
+    // Connection status tags and their last-update timestamps
+    private readonly Dictionary<string, (Tag Tag, long LastUpdate)> _connectionTagTimestamps = new();
+    private const long ConnectionTimeoutMs = 60_000; // 60秒无更新则重置为0
+
     public FuxaServerClient(IHubContext<DataHub> hubCtx, IProjectService project) : base(hubCtx)
     {
         _project = project;
@@ -37,6 +41,7 @@ public class FuxaServerClient : DeviceBase
     {
         base.Load(data);
         _calculatedTags.Clear();
+        _connectionTagTimestamps.Clear();
 
         var projectData = _project.GetProject();
 
@@ -51,6 +56,26 @@ public class FuxaServerClient : DeviceBase
                 if (compiled != null)
                 {
                     _calculatedTags[tag.Id] = compiled;
+                }
+            }
+            else if (tag.SysType == 1) // TagSystemType.deviceConnectionStatus
+            {
+                // Initialize connection status tags
+                tag.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                _connectionTagTimestamps[tag.Memaddress] = (tag, tag.Timestamp);
+                if (tag.Init != null && tag.Init != "")
+                {
+                    tag.Value = ParseInitValue(tag.Init, tag.Type);
+                }
+                else
+                {
+                    tag.Value = tag.Type switch
+                    {
+                        "boolean" => false,
+                        "number" => 0.0,
+                        "string" => "",
+                        _ => null
+                    };
                 }
             }
             else
@@ -98,6 +123,8 @@ public class FuxaServerClient : DeviceBase
 
         try
         {
+            // Check connection status tag timeout before processing
+            CheckConnectionTimeout();
             var ts = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             // Pass 1: update timestamps for non-calculated tags
@@ -184,6 +211,42 @@ public class FuxaServerClient : DeviceBase
         // Normal tags: set value directly
         tag.Value = UnwrapJsonValue(value);
         return Task.FromResult(true);
+    }
+
+    /// <summary>
+    /// 设置指定设备的连接状态数值（0=离线，1=在线，3=警告）
+    /// 对应 Node.js 端 setConnectionStatus 方法
+    /// </summary>
+    public void SetConnectionStatus(string deviceId, int status)
+    {
+        if (_connectionTagTimestamps.TryGetValue(deviceId, out var entry))
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            entry.Tag.Value = status;
+            entry.Tag.Timestamp = now;
+            _connectionTagTimestamps[deviceId] = (entry.Tag, now);
+        }
+    }
+
+    /// <summary>
+    /// 检查连接状态标签的超时：超过 60 秒未更新的标签重置为 0
+    /// 对应 Node.js 端 fuxaserver/index.js 中的 _checkConnectionStatus
+    /// </summary>
+    private void CheckConnectionTimeout()
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var threshold = now - ConnectionTimeoutMs;
+
+        foreach (var kv in _connectionTagTimestamps.ToList())
+        {
+            if (kv.Value.Tag.Value != null &&
+                !Equals(kv.Value.Tag.Value, 0) &&
+                kv.Value.LastUpdate < threshold)
+            {
+                kv.Value.Tag.Value = 0;
+                _connectionTagTimestamps[kv.Key] = (kv.Value.Tag, now);
+            }
+        }
     }
 
     #region Expression Compilation

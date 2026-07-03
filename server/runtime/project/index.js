@@ -223,6 +223,11 @@ function setProjectData(cmd, value) {
             section.name = value.id;
             setDevice(value);
         } else if (cmd === ProjectDataCmdType.DelDevice) {
+            if (value && value.id === '0') {
+                const err = new Error('Internal device cannot be deleted');
+                err.code = 'internal_device';
+                throw err;
+            }
             section.table = prjstorage.TableType.DEVICES;
             section.name = value.id;
             toremove = removeDevice(value);

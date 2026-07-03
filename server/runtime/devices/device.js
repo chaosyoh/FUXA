@@ -214,6 +214,7 @@ function Device(data, runtime) {
                         } else if (degradeRetryAttempts >= degradeRetryCount) {
                             // Exhausted retries, enter degrade mode
                             degraded = true;
+                            degradeRetryAttempts = 0;  // Reset counter so degrade mode attempts start from 1
                             degradeLastAttempt = Date.now();
                             logger.warn(`'${property.name}' entering degrade mode, retry every ${degradePeriod}s`);
                         }
@@ -662,5 +663,5 @@ var DeviceCmdEnum = {
  var ConnectionStatusEnum = {
     OFF: 0,
     WARNING: 3, // up to 5 times the polling interval without response
-    ON: 5,
+    ON: 1,
 }

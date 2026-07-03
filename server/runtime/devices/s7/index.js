@@ -7,8 +7,11 @@ var datatypes;
 const utils = require('../../utils');
 const deviceUtils = require('../device-utils');
 
-const MAX_MIX_ITEM = 20;
 const MIX_GAP_THRESHOLD = 100; // Gap threshold in bytes for splitting ReadArea batches
+const MAX_PDU_TOTAL = 230;  // Max total PDU bytes for ReadMultiVars (includes per-item overhead, conservative for S7-300 PDU=240)
+const READ_MULTI_VARS_OVERHEAD = 12;  // Per-item protocol overhead in ReadMultiVars (address spec bytes)
+const MAX_DB_READ = 200;  // Max bytes per single DBRead request
+const MAX_MULTI_VARS_ITEMS = 20;  // snap7 hard limit: max 20 items per ReadMultiVars call
 
 function S7client(_data, _logger, _events, _runtime) {
 
@@ -26,6 +29,31 @@ function S7client(_data, _logger, _events, _runtime) {
     var overloading = 0;                // Overloading counter to mange the break connection
     var lastTimestampValue;             // Last Timestamp of asked values
     var useReadArea = false;            // For S7-200/Smart: use ReadArea instead of ReadMultiVars
+
+    /**
+     * Chunk mix items for ReadMultiVars, accounting for per-item protocol overhead
+     * PDU consumption per item = READ_MULTI_VARS_OVERHEAD (12 bytes) + data_bytes
+     * Total PDU must stay under MAX_PDU_TOTAL; item count must stay under MAX_MULTI_VARS_ITEMS
+     * @param {array} items - mix items with .type property
+     */
+    var _chunkBySize = function (items) {
+        var chunks = [];
+        var current = [];
+        var currentPdu = 0;
+        for (var i = 0; i < items.length; i++) {
+            var dataBytes = datatypes[items[i].type] ? datatypes[items[i].type].bytes : 1;
+            var itemPdu = READ_MULTI_VARS_OVERHEAD + dataBytes;
+            if (current.length > 0 && (currentPdu + itemPdu > MAX_PDU_TOTAL || current.length >= MAX_MULTI_VARS_ITEMS)) {
+                chunks.push(current);
+                current = [];
+                currentPdu = 0;
+            }
+            current.push(items[i]);
+            currentPdu += itemPdu;
+        }
+        if (current.length > 0) chunks.push(current);
+        return chunks;
+    }
 
     /**
      * Connect to PLC
@@ -157,7 +185,8 @@ function S7client(_data, _logger, _events, _runtime) {
                     }));
                 } else {
                     // S7-300/400/1200/1500: use ReadMultiVars (efficient multi-read)
-                    utils.chunkArray(Object.values(mixItemsMap), MAX_MIX_ITEM).forEach((chunk) => {
+                    // Chunk by total data size to avoid exceeding PLC PDU limit
+                    _chunkBySize(Object.values(mixItemsMap)).forEach((chunk) => {
                         readVarsfnc.push(_readVars(chunk).catch(err => {
                             logger.error(`'${data.name}' _readVars error: ${err.message || err}`);
                             return [];
@@ -527,24 +556,99 @@ function S7client(_data, _logger, _events, _runtime) {
                     end = v.Start + datatypes[v.type].bytes;
                 }
             });
-            logger.info(`'${data.name}' _readDB: DBNr=${DBNr}, offset=${offset}, length=${end - offset}, vars=${vars.length}`, true, true);
-            s7client.DBRead(DBNr, offset, end - offset, (err, res) => {
-                if (err) {
-                    logger.error(`'${data.name}' DBRead(${DBNr}, ${offset}, ${end - offset}) failed: errCode=${err}, errText=${s7client.ErrorText(err)}`);
-                    return reject(new Error(`DBRead(${DBNr}) error: ${s7client.ErrorText(err)}`));
+            var totalLen = end - offset;
+            logger.info(`'${data.name}' _readDB: DBNr=${DBNr}, offset=${offset}, length=${totalLen}, vars=${vars.length}`, true, true);
+
+            // Split into sub-ranges if total byte range exceeds DB read limit
+            if (totalLen > MAX_DB_READ) {
+                var sortedVars = vars.slice().sort((a, b) => a.Start - b.Start);
+                var ranges = [];
+                var rangeStart = sortedVars[0].Start;
+                var rangeVars = [sortedVars[0]];
+                for (var i = 1; i < sortedVars.length; i++) {
+                    var v = sortedVars[i];
+                    var vEnd = v.Start + datatypes[v.type].bytes;
+                    if (vEnd - rangeStart > MAX_DB_READ) {
+                        ranges.push({ start: rangeStart, vars: rangeVars });
+                        rangeStart = v.Start;
+                        rangeVars = [v];
+                    } else {
+                        rangeVars.push(v);
+                    }
                 }
-                logger.info(`'${data.name}' DBRead(${DBNr}) OK, buffer length=${res ? res.length : 'null'}`, true, true);
-                vars.map(v => {
+                if (rangeVars.length > 0) ranges.push({ start: rangeStart, vars: rangeVars });
+
+                logger.info(`'${data.name}' _readDB(${DBNr}): split into ${ranges.length} sub-ranges (total ${totalLen} bytes > DB read limit ${MAX_DB_READ})`, true, true);
+                var rangePromises = ranges.map(r => {
+                    var rEnd = 0;
+                    r.vars.forEach(v => {
+                        if (rEnd < v.Start + datatypes[v.type].bytes) rEnd = v.Start + datatypes[v.type].bytes;
+                    });
+                    return _readDBRange(DBNr, r.start, rEnd - r.start, r.vars);
+                });
+                return Promise.all(rangePromises).then(results => {
+                    var allVars = [];
+                    results.forEach(r => { allVars = allVars.concat(r); });
+                    resolve(allVars);
+                }).catch(err => reject(err));
+            } else {
+                _readDBRange(DBNr, offset, totalLen, vars).then(resolve).catch(reject);
+            }
+        });
+    }
+
+    /**
+     * Read a single DB byte range and parse the result
+     * If PDU size exceeded, automatically splits range in half and retries
+     * @param {int} DBNr - DB number
+     * @param {int} offset - Start byte offset
+     * @param {int} length - Number of bytes to read
+     * @param {array} vars - Vars within this range to parse
+     * @param {number} _depth - internal recursion depth
+     */
+    var _readDBRange = function (DBNr, offset, length, vars, _depth) {
+        _depth = _depth || 0;
+        return new Promise((resolve, reject) => {
+            s7client.DBRead(DBNr, offset, length, (err, res) => {
+                if (err) {
+                    var errText = s7client.ErrorText(err);
+                    // PDU exceeded: split byte range in half and retry
+                    if (errText.indexOf('PDU') >= 0 && length > 2 && _depth < 5) {
+                        var halfLen = Math.ceil(length / 2);
+                        var firstHalfVars = vars.filter(v => v.Start < offset + halfLen);
+                        var secondHalfVars = vars.filter(v => v.Start >= offset + halfLen);
+                        logger.warn(`'${data.name}' DBRead(${DBNr}) PDU exceeded (${length} bytes), splitting into ${halfLen}+${length - halfLen} (depth=${_depth})`);
+                        var promises = [];
+                        if (firstHalfVars.length > 0) {
+                            var h1End = 0;
+                            firstHalfVars.forEach(v => { if (v.Start + datatypes[v.type].bytes > h1End) h1End = v.Start + datatypes[v.type].bytes; });
+                            promises.push(_readDBRange(DBNr, offset, h1End - offset, firstHalfVars, _depth + 1));
+                        }
+                        if (secondHalfVars.length > 0) {
+                            var h2Start = secondHalfVars[0].Start;
+                            var h2End = 0;
+                            secondHalfVars.forEach(v => { if (v.Start + datatypes[v.type].bytes > h2End) h2End = v.Start + datatypes[v.type].bytes; });
+                            promises.push(_readDBRange(DBNr, h2Start, h2End - h2Start, secondHalfVars, _depth + 1));
+                        }
+                        return Promise.all(promises).then(results => {
+                            var merged = [];
+                            results.forEach(r => { merged = merged.concat(r); });
+                            resolve(merged);
+                        }).catch(reject);
+                    }
+                    logger.error(`'${data.name}' DBRead(${DBNr}, ${offset}, ${length}) failed: errCode=${err}, errText=${errText}`);
+                    return reject(new Error(`DBRead(${DBNr}) error: ${errText}`));
+                }
+                logger.info(`'${data.name}' DBRead(${DBNr}, ${offset}, ${length}) OK, buffer length=${res ? res.length : 'null'}`, true, true);
+                vars.forEach(v => {
                     let value = null;
                     if (v.type === 'BOOL') {
-                        // check the full byte and send all bit if there is a change
                         value = datatypes['BYTE'].parser(res, v.Start - offset, -1);
                     } else {
                         value = datatypes[v.type].parser(res, v.Start - offset, v.bit);
                     }
                     v.changed = value !== v.value;
                     v.value = value;
-                    return v;
                 });
                 resolve(vars);
             });
@@ -553,12 +657,31 @@ function S7client(_data, _logger, _events, _runtime) {
 
     /**
      * Read multiple Vars using ReadMultiVars (for S7-300/400/1200/1500)
-     * @param {*} vars
+     * If PDU size exceeded, automatically splits vars in half and retries recursively
+     * @param {array} vars - items to read
+     * @param {number} _depth - internal recursion depth (prevents infinite loop)
      */
-    var _readVars = function (vars) {
+    var _readVars = function (vars, _depth) {
+        _depth = _depth || 0;
         return new Promise((resolve, reject) => {
             s7client.ReadMultiVars(vars, (err, res) => {
-                if (err) return reject(new Error(`ReadMultiVars error: ${s7client.ErrorText(err)}`));
+                if (err) {
+                    var errText = s7client.ErrorText(err);
+                    // PDU size exceeded: auto-split and retry with smaller chunks
+                    if (errText.indexOf('PDU') >= 0 && vars.length > 1 && _depth < 5) {
+                        var mid = Math.ceil(vars.length / 2);
+                        logger.warn(`'${data.name}' ReadMultiVars PDU exceeded (${vars.length} items), splitting into ${mid}+${vars.length - mid} (depth=${_depth})`);
+                        return Promise.all([
+                            _readVars(vars.slice(0, mid), _depth + 1),
+                            _readVars(vars.slice(mid), _depth + 1)
+                        ]).then(results => {
+                            var merged = [];
+                            results.forEach(r => { merged = merged.concat(r); });
+                            resolve(merged);
+                        }).catch(reject);
+                    }
+                    return reject(new Error(`ReadMultiVars error: ${errText}`));
+                }
                 let errs = [];
                 res = vars.map((v, i) => {
                     let value = null;
@@ -567,8 +690,7 @@ function S7client(_data, _logger, _events, _runtime) {
                     } else {
                         try {
                             if (v.type === 'BOOL') {
-                                // check the full byte and send all bit if there is a change
-                                value = datatypes['BYTE'].parser(res[i].Data);//, v.Start, -1);
+                                value = datatypes['BYTE'].parser(res[i].Data);
                             } else {
                                 value = datatypes[v.type].parser(res[i].Data);
                             }
@@ -642,8 +764,37 @@ function S7client(_data, _logger, _events, _runtime) {
         }
         if (currentGroup.length > 0) subGroups.push(currentGroup);
 
+        // Further split sub-groups if byte range exceeds PDU data limit
+        var finalGroups = [];
+        subGroups.forEach(group => {
+            var gStart = group[0].Start;
+            var gEnd = 0;
+            group.forEach(v => {
+                var byteLen = datatypes[v.type] ? datatypes[v.type].bytes : 1;
+                if (v.Start + byteLen > gEnd) gEnd = v.Start + byteLen;
+            });
+            if (gEnd - gStart > MAX_DB_READ) {
+                // Split this group further by PDU size
+                var chunk = [];
+                var chunkStart = group[0].Start;
+                group.forEach(v => {
+                    var byteLen = datatypes[v.type] ? datatypes[v.type].bytes : 1;
+                    if (chunk.length > 0 && (v.Start + byteLen - chunkStart) > MAX_DB_READ) {
+                        finalGroups.push(chunk);
+                        chunk = [v];
+                        chunkStart = v.Start;
+                    } else {
+                        chunk.push(v);
+                    }
+                });
+                if (chunk.length > 0) finalGroups.push(chunk);
+            } else {
+                finalGroups.push(group);
+            }
+        });
+
         // Read each sub-group with a separate ReadArea call
-        var promises = subGroups.map(group => _readAreaSubGroup(area, group));
+        var promises = finalGroups.map(group => _readAreaSubGroup(area, group));
         return Promise.all(promises).then(results => {
             var allVars = [];
             results.forEach(r => { allVars = allVars.concat(r); });
@@ -653,10 +804,13 @@ function S7client(_data, _logger, _events, _runtime) {
 
     /**
      * Read a contiguous sub-group of items from the same area using one ReadArea call
+     * If PDU exceeded, auto-splits byte range in half and retries
      * @param {number} area - S7 area code
      * @param {array} vars - contiguous items (sorted by Start, gaps <= threshold)
+     * @param {number} _depth - internal recursion depth
      */
-    var _readAreaSubGroup = function (area, vars) {
+    var _readAreaSubGroup = function (area, vars, _depth) {
+        _depth = _depth || 0;
         return new Promise((resolve, reject) => {
             if (vars.length === 0) return resolve([]);
 
@@ -674,8 +828,25 @@ function S7client(_data, _logger, _events, _runtime) {
             // ReadArea(area, dbNumber, start, amount, wordLen, callback)
             s7client.ReadArea(area, 0, minStart, readLen, s7client.S7WLByte, (err, buffer) => {
                 if (err) {
-                    logger.error(`'${data.name}' ReadArea(${area}) error: ${s7client.ErrorText(err)}`, false);
-                    return reject(new Error(`ReadArea error: ${s7client.ErrorText(err)}`));
+                    var errText = s7client.ErrorText(err);
+                    // PDU exceeded: split byte range in half and retry
+                    if (errText.indexOf('PDU') >= 0 && readLen > 2 && _depth < 5) {
+                        var halfLen = Math.ceil(readLen / 2);
+                        var splitPoint = minStart + halfLen;
+                        var firstHalf = vars.filter(v => v.Start < splitPoint);
+                        var secondHalf = vars.filter(v => v.Start >= splitPoint);
+                        logger.warn(`'${data.name}' ReadArea(${area}) PDU exceeded (${readLen} bytes), splitting (depth=${_depth})`);
+                        var promises = [];
+                        if (firstHalf.length > 0) promises.push(_readAreaSubGroup(area, firstHalf, _depth + 1));
+                        if (secondHalf.length > 0) promises.push(_readAreaSubGroup(area, secondHalf, _depth + 1));
+                        return Promise.all(promises).then(results => {
+                            var merged = [];
+                            results.forEach(r => { merged = merged.concat(r); });
+                            resolve(merged);
+                        }).catch(reject);
+                    }
+                    logger.error(`'${data.name}' ReadArea(${area}) error: ${errText}`, false);
+                    return reject(new Error(`ReadArea error: ${errText}`));
                 }
                 vars.forEach(v => {
                     try {

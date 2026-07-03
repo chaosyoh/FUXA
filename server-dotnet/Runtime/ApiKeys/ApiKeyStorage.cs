@@ -1,36 +1,29 @@
 using Core.Entity;
-using Core.Settings;
 using Microsoft.Extensions.Logging;
-using Runtime.Storage;
 using SqlSugar;
 
 namespace Runtime.ApiKeys;
 
-public class ApiKeyStorage : IApiKeyStorage
+public class ApiKeyStorage
 {
     private readonly ILogger<ApiKeyStorage> _logger;
     private readonly ISqlSugarClient _db;
 
-    public ApiKeyStorage(ILogger<ApiKeyStorage> logger, ISqlSugarProvider provider)
+    public ApiKeyStorage(ILogger<ApiKeyStorage> logger, ISqlSugarClient db)
     {
         _logger = logger;
-        _db = provider.GetClient("ApiKeyStorage");
+        _db = db;
+    }
+
+    public void InitTables()
+    {
         try
         {
             _db.CodeFirst.InitTables<ApiKey>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ApiKey storage initialization failed, attempting to recreate table");
-            try
-            {
-                _db.DbMaintenance.DropTable("apikeys");
-                _db.CodeFirst.InitTables<ApiKey>();
-            }
-            catch (Exception ex2)
-            {
-                _logger.LogError(ex2, "ApiKey table recreation failed");
-            }
+            _logger.LogError(ex, "ApiKey storage table initialization failed");
         }
     }
 

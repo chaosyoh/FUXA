@@ -23,6 +23,9 @@ public class DeviceBackgrouService : BackgroundService
     private readonly int _degradeRetryCount;
     private readonly int _degradePeriodMs;
 
+    // 连接状态数值回调（写入 FuxaServer 的 Connection Status 变量）
+    private Action<int>? _onConnectionStatus;
+
     public Device Device => _device;
     public IDevice Client => _client;
 
@@ -39,6 +42,14 @@ public class DeviceBackgrouService : BackgroundService
         _degradeEnabled = device.DegradeEnabled ?? true;
         _degradeRetryCount = device.DegradeRetryCount ?? 2;
         _degradePeriodMs = (device.DegradePeriod ?? 60) * 1000;
+    }
+
+    /// <summary>
+    /// 绑定连接状态数值回调，每轮轮询后根据响应时效计算 0/1/3 并回调
+    /// </summary>
+    public void BindConnectionStatusCallback(Action<int> callback)
+    {
+        _onConnectionStatus = callback;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -158,6 +169,9 @@ public class DeviceBackgrouService : BackgroundService
                 }
 
                 await Task.Delay(pollingInterval, stoppingToken);
+
+                // 检查连接状态（与 Node.js Device.checkStatus 对齐）
+                CheckConnectionStatus();
             }
 
             // 设备断开后重置降级状态，下次重新从正常重试开始
@@ -173,5 +187,28 @@ public class DeviceBackgrouService : BackgroundService
 
         // 清理：确保断开连接
         try { await _client.Disconnect(); } catch { /* ignore */ }
+    }
+
+    /// <summary>
+    /// 根据最后成功读取时间戳计算连接状态数值（0=离线，1=在线，3=警告）
+    /// 对应 Node.js 端 Device.checkStatus 中的连接状态判断逻辑
+    /// </summary>
+    private void CheckConnectionStatus()
+    {
+        if (_onConnectionStatus == null) return;
+
+        var pollingInterval = _device.Polling > 0 ? _device.Polling : DefaultPollingMs;
+        var lastRead = _client.LastReadTimestamp();
+        var now = DateTime.Now;
+
+        int status;
+        if (lastRead == DateTime.MinValue || (now - lastRead).TotalMilliseconds > pollingInterval * 5)
+            status = ConnectionStatus.Off;   // 0
+        else if ((now - lastRead).TotalMilliseconds > pollingInterval * 2)
+            status = ConnectionStatus.Warning; // 3
+        else
+            status = ConnectionStatus.On;    // 1
+
+        _onConnectionStatus(status);
     }
 }

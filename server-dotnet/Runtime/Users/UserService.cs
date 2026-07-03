@@ -6,7 +6,6 @@ using Core.Utils;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.Logging;
 using Runtime.Project;
-using Runtime.Storage;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -26,10 +25,14 @@ public class UserService
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
-    public UserService(ILogger<UserService> logger, ISqlSugarProvider provider)
+    public UserService(ILogger<UserService> logger, ISqlSugarClient db)
     {
         _logger = logger;
-        _db = provider.GetClient("UserService");
+        _db = db;
+    }
+
+    public void InitTables()
+    {
         try
         {
             _db.CodeFirst.InitTables<User>();
@@ -37,7 +40,7 @@ public class UserService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "初始化表失败");
+            _logger.LogError(ex, "user table initialization failed!");
         }
     }
 

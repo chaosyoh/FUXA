@@ -2,7 +2,7 @@ using SqlSugar;
 
 namespace Core.Models;
 
-[SugarTable("alarms")]
+[SugarTable("alarms_runtime")]
 public class AlarmRecord
 {
     [SugarColumn(IsPrimaryKey = true, ColumnName = "nametype")]

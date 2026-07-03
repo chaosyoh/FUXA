@@ -18,6 +18,8 @@ public class S7DeviceClient : DeviceBase, IDisposable
     private readonly List<MixBatch> _mixBatches = new();
     // Gap threshold in bytes: adjacent tags with gap > this are split into separate batches
     private const int GapThreshold = 100;
+    // Max bytes per single PLC read request (conservative for all S7 CPUs, PDU limit is typically 240-960)
+    private const int MaxPduData = 200;
 
     private record MixBatch(DataType Area, List<S7TagItem> Items);
 
@@ -202,7 +204,7 @@ public class S7DeviceClient : DeviceBase, IDisposable
         var size = maxEnd - minStart;
         if (size <= 0) return;
 
-        var buffer = await _plc.ReadBytesAsync(DataType.DataBlock, dbNumber, minStart, size);
+        var buffer = await ReadBytesChunkedAsync(DataType.DataBlock, dbNumber, minStart, size);
         if (buffer == null || buffer.Length == 0) return;
 
         foreach (var item in items)
@@ -226,7 +228,7 @@ public class S7DeviceClient : DeviceBase, IDisposable
         var size = maxEnd - minStart;
         if (size <= 0) return;
 
-        var buffer = await _plc.ReadBytesAsync(batch.Area, 0, minStart, size);
+        var buffer = await ReadBytesChunkedAsync(batch.Area, 0, minStart, size);
         if (buffer == null || buffer.Length == 0) return;
 
         foreach (var item in items)
@@ -234,6 +236,34 @@ public class S7DeviceClient : DeviceBase, IDisposable
             var offset = item.Start - minStart;
             item.Tag.Value = ParseValue(buffer, offset, item);
         }
+    }
+
+    /// <summary>
+    /// Read bytes from PLC, automatically splitting into PDU-sized chunks if needed.
+    /// Returns the combined buffer as if it were a single read.
+    /// </summary>
+    private async Task<byte[]> ReadBytesChunkedAsync(DataType area, int dbNumber, int start, int size)
+    {
+        if (_plc == null) return [];
+        if (size <= MaxPduData)
+        {
+            return await _plc.ReadBytesAsync(area, dbNumber, start, size);
+        }
+
+        // Split into chunks respecting PDU limit
+        var result = new byte[size];
+        var offset = 0;
+        while (offset < size)
+        {
+            var chunkSize = Math.Min(MaxPduData, size - offset);
+            var chunk = await _plc.ReadBytesAsync(area, dbNumber, start + offset, chunkSize);
+            if (chunk != null && chunk.Length > 0)
+            {
+                Array.Copy(chunk, 0, result, offset, chunk.Length);
+            }
+            offset += chunkSize;
+        }
+        return result;
     }
 
     private static object? ParseValue(byte[] buffer, int offset, S7TagItem item)

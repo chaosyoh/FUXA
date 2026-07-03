@@ -1,16 +1,14 @@
 ﻿using Core.Const;
 using Core.Models;
-using Core.Settings;
 using Core.Utils;
 using Microsoft.Extensions.Logging;
-using Runtime.Storage;
 using SqlSugar;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Runtime.Project;
 
-public class ProjectStorage : IProjectStorage
+public class ProjectStorage
 {
     private readonly ILogger<ProjectStorage> _logger;
     private readonly ISqlSugarClient _db;
@@ -26,17 +24,21 @@ public class ProjectStorage : IProjectStorage
         typeof(ScriptRow), typeof(ReportRow), typeof(LocationRow),
     };
 
-    public ProjectStorage(ILogger<ProjectStorage> logger, ISqlSugarProvider provider)
+    public ProjectStorage(ILogger<ProjectStorage> logger, ISqlSugarClient db)
     {
         _logger = logger;
-        _db = provider.GetClient("ProjectStorage");
+        _db = db;
+    }
+
+    public void InitTables()
+    {
         try
         {
             _db.CodeFirst.InitTables(_tableEntityTypes);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "database initialization failed!");
+            _logger.LogError(ex, "project storage table initialization failed!");
         }
     }
 
@@ -69,11 +71,7 @@ public class ProjectStorage : IProjectStorage
         foreach (var section in sections)
         {
             var value = SerializeValue(section.Value, _jsonOptions);
-            var sql = $"INSERT OR REPLACE INTO {section.Table} (name, value) VALUES(@name, @value)";
-            if (_db.CurrentConnectionConfig.DbType != DbType.Sqlite)
-            {
-                sql = $"INSERT INTO {section.Table} (name, value) VALUES(@name, @value) ON DUPLICATE KEY UPDATE value = VALUES(value)";
-            }
+            var sql = $"INSERT INTO {section.Table} (name, value) VALUES(@name, @value) ON DUPLICATE KEY UPDATE value = VALUES(value)";
             await _db.Ado.ExecuteCommandAsync(sql, new { name = section.Name, value });
         }
     }
@@ -81,11 +79,7 @@ public class ProjectStorage : IProjectStorage
     public async Task SetSection(SqlSection section)
     {
         var value = SerializeValue(section.Value, _jsonOptions);
-        var sql = $"INSERT OR REPLACE INTO {section.Table} (name, value) VALUES(@name, @value)";
-        if (_db.CurrentConnectionConfig.DbType != DbType.Sqlite)
-        {
-            sql = $"INSERT INTO {section.Table} (name, value) VALUES(@name, @value) ON DUPLICATE KEY UPDATE value = VALUES(value)";
-        }
+        var sql = $"INSERT INTO {section.Table} (name, value) VALUES(@name, @value) ON DUPLICATE KEY UPDATE value = VALUES(value)";
         await _db.Ado.ExecuteCommandAsync(sql, new { name = section.Name, value });
     }
 

@@ -17,7 +17,7 @@ public class ProjectController : ControllerBase
 {
     private readonly ILogger<ProjectController> _logger;
     private readonly IProjectService _projectService;
-    private readonly IProjectStorage _prjStorage;
+    private readonly ProjectStorage _prjStorage;
     private readonly UserService _userService;
     private readonly IAlarmService _alarmService;
     private readonly INotificatorService _notificatorService;
@@ -25,7 +25,7 @@ public class ProjectController : ControllerBase
     public ProjectController(
         ILogger<ProjectController> logger,
         IProjectService projectService,
-        IProjectStorage prjStorage,
+        ProjectStorage prjStorage,
         UserService userService,
         IAlarmService alarmService,
         INotificatorService notificatorService)
@@ -137,6 +137,11 @@ public class ProjectController : ControllerBase
             }
 
             return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation on project data: {Cmd}", req.Cmd);
+            return BadRequest(new { error = "invalid_operation", message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -301,16 +306,34 @@ public class ProjectController : ControllerBase
         try
         {
             var settings = AppSettings.GetSettings();
-            var userSettingsFile = Path.Combine(settings.WorkDir, "mysettings.json");
-            var json = System.Text.Json.JsonSerializer.Serialize(settingsObj);
-            System.IO.File.WriteAllText(userSettingsFile, json);
 
             // Update in-memory settings singleton
+            var json = System.Text.Json.JsonSerializer.Serialize(settingsObj);
             var parsed = System.Text.Json.JsonSerializer.Deserialize<Settings>(json, Core.Utils.JsonHelper.Default);
             if (parsed != null)
             {
                 settings.MergeUserSettings(parsed);
             }
+
+            // Persist to appsettings.json (update the "Fuxa" section, preserve other sections)
+            var appSettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+            System.Text.Json.Nodes.JsonObject root;
+            if (System.IO.File.Exists(appSettingsPath))
+            {
+                var existingJson = System.IO.File.ReadAllText(appSettingsPath);
+                root = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.Nodes.JsonObject>(existingJson)
+                    ?? new System.Text.Json.Nodes.JsonObject();
+            }
+            else
+            {
+                root = new System.Text.Json.Nodes.JsonObject();
+            }
+
+            var fuxaNode = System.Text.Json.JsonSerializer.SerializeToNode(settingsObj);
+            root["Fuxa"] = fuxaNode;
+
+            var writeOptions = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+            System.IO.File.WriteAllText(appSettingsPath, root.ToJsonString(writeOptions));
 
             return Ok();
         }

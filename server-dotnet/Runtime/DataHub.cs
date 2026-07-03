@@ -16,7 +16,7 @@ public class DataHub : Hub
     private readonly TagSubscribeService _service;
     private readonly IProjectService _project;
     private readonly IAlarmService _alarmService;
-    private readonly IDaqStorageService _daqService;
+    private readonly DaqStorageService _daqService;
     private readonly IDeviceRegistry _registry;
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -25,7 +25,7 @@ public class DataHub : Hub
         TagSubscribeService service,
         IProjectService project,
         IAlarmService alarmService,
-        IDaqStorageService daqService,
+        DaqStorageService daqService,
         IDeviceRegistry registry,
         IHttpClientFactory httpClientFactory)
     {

@@ -45,12 +45,24 @@ async function _bind() {
             var dbfile = path.join(settings.workDir, 'project.fuxap.db');
             dbfileExist = await adapter.init({ dbFile: dbfile, logger, moduleName: 'prjstorage' });
         } else {
-            dbfileExist = await adapter.init({ logger, moduleName: 'prjstorage' });
+            await adapter.init({ logger, moduleName: 'prjstorage' });
+            // For non-SQLite engines, check if data already exists in DB
+            // (KnexAdapter.init() always returns false since there's no file to check)
+            try {
+                const checkSql = engine === 'mssql'
+                    ? 'SELECT TOP 1 name FROM general'
+                    : 'SELECT name FROM general LIMIT 1';
+                const rows = await adapter.all(checkSql);
+                dbfileExist = rows && rows.length > 0;
+            } catch (e) {
+                dbfileExist = false;
+            }
         }
         const ddl = dbAdapter.getDDL(engine, 'project');
         if (engine === 'sqlite') {
             await adapter.exec(ddl.join('; '));
         }
+        if (logger) logger.info(`prjstorage._bind: engine=${engine}, dataExists=${dbfileExist}`, true);
         return dbfileExist;
     } catch (err) {
         logger.error(`prjstorage.bind failed! ${err}`);

@@ -248,7 +248,7 @@ export class FlexVariableComponent implements OnInit {
             if (deviceUpdated && deviceUpdated.name === deviceName) {
                 deviceTags = deviceUpdated.tags;
             }
-            Object.values(deviceTags).forEach((tag: Tag) => {
+            Object.values(deviceTags || {}).forEach((tag: Tag) => {
                 const deviceTag = <DeviceTagOption> {
                     id: tag.id,
                     name: this._tagToVariableName(tag),

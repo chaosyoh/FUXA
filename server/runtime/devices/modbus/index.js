@@ -50,7 +50,7 @@ function MODBUSclient(_data, _logger, _events, _runtime) {
                                 logger.error(`'${data.name}' connect failed! ${err}`);
                                 _emitStatus('connect-error');
                                 _clearVarsValue();
-                                reject();
+                                reject(err);
                             } else {
                                 if (data.property.slaveid) {
                                     // set the client's unit id
@@ -65,7 +65,9 @@ function MODBUSclient(_data, _logger, _events, _runtime) {
                             _checkWorking(false);
                         });
                     } else {
-                        reject();
+                        logger.warn(`'${data.name}' client already open or busy, forcing close`);
+                        try { client.close(() => {}); } catch (e) { /* ignore */ }
+                        reject(new Error('client already open or busy'));
                         _emitStatus('connect-error');
                     }
                 } catch (err) {
@@ -73,13 +75,13 @@ function MODBUSclient(_data, _logger, _events, _runtime) {
                     _checkWorking(false);
                     _emitStatus('connect-error');
                     _clearVarsValue();
-                    reject();
+                    reject(err);
                 }
             } else {
                 logger.error(`'${data.name}' missing connection data!`);
                 _emitStatus('connect-failed');
                 _clearVarsValue();
-                reject();
+                reject(new Error('missing connection data'));
             }
         });
     }
@@ -92,11 +94,36 @@ function MODBUSclient(_data, _logger, _events, _runtime) {
         return new Promise(function (resolve, reject) {
             _checkWorking(false);
             if (!client.isOpen) {
+                // Clean up socket pool: remove stale/broken socket so next connect creates fresh one
+                if (data.property && data.property.socketReuse && runtime && runtime.socketPool && runtime.socketPool.has(data.property.address)) {
+                    var staleSocket = runtime.socketPool.get(data.property.address);
+                    try {
+                        staleSocket.removeAllListeners();
+                        staleSocket.destroy();
+                    } catch (e) { /* ignore */ }
+                    runtime.socketPool.delete(data.property.address);
+                }
+                // Clean up mutex for the resource
+                if (data.property && runtime && runtime.socketMutex && runtime.socketMutex.has(data.property.address)) {
+                    runtime.socketMutex.delete(data.property.address);
+                }
                 _emitStatus('connect-off');
                 _clearVarsValue();
                 resolve(true);
             } else {
                 client.close(function (result) {
+                    // Clean up socket pool after close
+                    if (data.property && data.property.socketReuse && runtime && runtime.socketPool && runtime.socketPool.has(data.property.address)) {
+                        var staleSocket = runtime.socketPool.get(data.property.address);
+                        try {
+                            staleSocket.removeAllListeners();
+                            staleSocket.destroy();
+                        } catch (e) { /* ignore */ }
+                        runtime.socketPool.delete(data.property.address);
+                    }
+                    if (data.property && runtime && runtime.socketMutex && runtime.socketMutex.has(data.property.address)) {
+                        runtime.socketMutex.delete(data.property.address);
+                    }
                     if (result) {
                         logger.error(`'${data.name}' try to disconnect failed!`);
                     } else {
@@ -769,7 +796,10 @@ function MODBUSclient(_data, _logger, _events, _runtime) {
                 if (type !== ModbusTypes.RTU) {
                     logger.warn(`'${data.name}' working (connection || polling) overload! ${overloading}`);
                 }
-                client.close();
+                try { client.close(() => {}); } catch (e) { /* ignore */ }
+                working = false;
+                overloading = 0;
+                return false;
             } else {
                 return false;
             }

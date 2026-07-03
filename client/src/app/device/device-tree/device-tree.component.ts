@@ -1,10 +1,11 @@
-import { Component, OnInit, OnDestroy, Input, Output, EventEmitter, ChangeDetectorRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, Output, EventEmitter, ChangeDetectorRef, ViewChild, AfterViewInit, ElementRef, HostListener } from '@angular/core';
 import { FlatTreeControl } from '@angular/cdk/tree';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 
@@ -85,6 +86,19 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     // Tree search
     treeFilterText = '';
 
+    // Type column filter
+    selectedTypes = new Set<string>();
+    typeFilterOptions: string[] = [];
+    private textFilterValue = '';
+
+    // Column resize
+    private resizeColumn: string | null = null;
+    private resizeStartX = 0;
+    private resizeStartWidth = 0;
+    private resizeWidths: { [key: string]: number } = {};
+    private onMouseMoveHandler: ((e: MouseEvent) => void) | null = null;
+    private onMouseUpHandler: (() => void) | null = null;
+
     // Device plugins (available device types)
     plugins = [];
 
@@ -128,7 +142,9 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         private translateService: TranslateService,
         private changeDetector: ChangeDetectorRef,
         private dialog: MatDialog,
-        private tagPropertyService: TagPropertyService
+        private tagPropertyService: TagPropertyService,
+        private snackBar: MatSnackBar,
+        private elementRef: ElementRef
     ) {}
 
     ngOnInit() {
@@ -159,6 +175,68 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this._updateTimer) {
             clearTimeout(this._updateTimer);
             this._updateTimer = null;
+        }
+        this.removeResizeListeners();
+    }
+
+    // ═══════════════════════════════════════════════
+    // Column Resize
+    // ═══════════════════════════════════════════════
+
+    /** Detect mousedown near header cell right edge to start column resize */
+    @HostListener('mousedown', ['$event'])
+    onHostMouseDown(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        const headerCell = target.closest('mat-header-cell, .mat-mdc-header-cell, .mat-header-cell') as HTMLElement;
+        if (!headerCell) return;
+
+        // Skip system/frozen columns (index, select, writeValue, remove)
+        const systemCols = [...DeviceTreeComponent.LEFT_FROZEN_COLUMNS, ...DeviceTreeComponent.RIGHT_FROZEN_COLUMNS];
+        const classList = Array.from(headerCell.classList);
+        const columnKey = classList.find(c => c.startsWith('mat-column-'))?.replace('mat-column-', '');
+        if (!columnKey || systemCols.includes(columnKey)) return;
+
+        const rect = headerCell.getBoundingClientRect();
+        if (rect.right - event.clientX > 6) return;
+
+        event.preventDefault();
+        this.resizeColumn = columnKey;
+        this.resizeStartX = event.clientX;
+        this.resizeStartWidth = rect.width;
+
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+
+        this.onMouseMoveHandler = (e: MouseEvent) => this.onResizeMove(e);
+        this.onMouseUpHandler = () => this.onResizeEnd();
+        document.addEventListener('mousemove', this.onMouseMoveHandler);
+        document.addEventListener('mouseup', this.onMouseUpHandler);
+    }
+
+    private onResizeMove(event: MouseEvent) {
+        if (!this.resizeColumn) return;
+        const diff = event.clientX - this.resizeStartX;
+        const newWidth = Math.max(50, Math.round(this.resizeStartWidth + diff));
+        this.resizeWidths[this.resizeColumn] = newWidth;
+        this.applyColumnStyles();
+        this.changeDetector.detectChanges();
+    }
+
+    private onResizeEnd() {
+        this.resizeColumn = null;
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        this.removeResizeListeners();
+    }
+
+    private removeResizeListeners() {
+        if (this.onMouseMoveHandler) {
+            document.removeEventListener('mousemove', this.onMouseMoveHandler);
+            this.onMouseMoveHandler = null;
+        }
+        if (this.onMouseUpHandler) {
+            document.removeEventListener('mouseup', this.onMouseUpHandler);
+            this.onMouseUpHandler = null;
         }
     }
 
@@ -345,6 +423,12 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
             });
         }
 
+        // Initialize type filter options and selection (reset on node change)
+        const allTags = Object.values(this.selectedDevice.tags || {}) as Tag[];
+        this.typeFilterOptions = [...new Set(allTags.map(t => t.type).filter(Boolean))].sort();
+        this.selectedTypes = new Set(this.typeFilterOptions);
+        this.textFilterValue = '';
+
         this.bindToTable();
     }
 
@@ -381,7 +465,7 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.applyColumnStyles();
     }
 
-    /** Bind filtered tags to the table */
+    /** Bind filtered tags to the table (preserves type filter state) */
     private bindToTable() {
         if (!this.selectedDevice || !this.selectedNode) {
             this.dataSource.data = [];
@@ -398,6 +482,26 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
             );
         }
         this.dataSource.data = tags;
+
+        // Update type options to include any new types added during editing
+        const currentTypes = new Set(tags.map(t => t.type).filter(Boolean));
+        for (const t of currentTypes) {
+            if (!this.typeFilterOptions.includes(t)) {
+                this.typeFilterOptions.push(t);
+                this.selectedTypes.add(t);
+            }
+        }
+        this.typeFilterOptions.sort();
+
+        // Set up combined filter predicate (text + type)
+        this.dataSource.filterPredicate = (data: any, filter: string) => {
+            const f = JSON.parse(filter);
+            const textMatch = !f.text || JSON.stringify(data).toLowerCase().includes(f.text);
+            const typeMatch = !f.types || f.types.length === 0 || f.types.includes(data.type);
+            return textMatch && typeMatch;
+        };
+        this.applyCombinedFilter();
+
         this.reassignPaginator();
         this.hmiService.viewsTagsSubscribe(tags.map(t => t.id));
     }
@@ -567,6 +671,14 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         Utils.copyToClipboard(JSON.stringify(tag));
     }
 
+    /** Copy tag ID to clipboard on double-click */
+    onCopyId(element: any) {
+        if (element?.id) {
+            Utils.copyToClipboard(element.id);
+            this.snackBar.open(`变量ID已复制: ${element.id}`, undefined, { duration: 2000 });
+        }
+    }
+
     /** Open write value dialog */
     onWriteValue(tag: Tag) {
         let dialogRef = this.dialog.open(TagWriteValueComponent, {
@@ -589,10 +701,53 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         return tag.access === 'ro' ? 'RO' : 'RW';
     }
 
-    /** Filter tags */
+    /** Filter tags by text */
     applyFilter(filterValue: string) {
-        filterValue = filterValue.trim().toLowerCase();
-        this.dataSource.filter = filterValue;
+        this.textFilterValue = filterValue.trim().toLowerCase();
+        this.applyCombinedFilter();
+    }
+
+    /** Apply combined text + type filter to dataSource */
+    private applyCombinedFilter() {
+        this.dataSource.filter = JSON.stringify({
+            text: this.textFilterValue,
+            types: this.selectedTypes.size === this.typeFilterOptions.length ? [] : Array.from(this.selectedTypes)
+        });
+    }
+
+    /** Check if a type is in the filter */
+    isTypeFilterActive(): boolean {
+        return this.selectedTypes.size < this.typeFilterOptions.length;
+    }
+
+    /** Check if all types are selected */
+    isAllTypesSelected(): boolean {
+        return this.selectedTypes.size === this.typeFilterOptions.length && this.typeFilterOptions.length > 0;
+    }
+
+    /** Check if some but not all types are selected */
+    isTypeIndeterminate(): boolean {
+        return this.selectedTypes.size > 0 && this.selectedTypes.size < this.typeFilterOptions.length;
+    }
+
+    /** Toggle a single type in the filter */
+    toggleTypeFilter(type: string) {
+        if (this.selectedTypes.has(type)) {
+            this.selectedTypes.delete(type);
+        } else {
+            this.selectedTypes.add(type);
+        }
+        this.applyCombinedFilter();
+    }
+
+    /** Toggle select all types */
+    toggleAllTypes() {
+        if (this.isAllTypesSelected()) {
+            this.selectedTypes.clear();
+        } else {
+            this.selectedTypes = new Set(this.typeFilterOptions);
+        }
+        this.applyCombinedFilter();
     }
 
     /** Total filtered rows count */
@@ -1002,6 +1157,7 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
     /** Delete the selected device */
     deleteSelectedDevice() {
         if (!this.selectedNode || this.selectedNode.type !== 'device') return;
+        if (this.selectedNode.deviceId === '0') return; // Internal device cannot be deleted
         const device = this.getDeviceById(this.selectedNode.deviceId);
         if (!device) return;
         this.editDevice(device, true);
@@ -1130,17 +1286,76 @@ export class DeviceTreeComponent implements OnInit, AfterViewInit, OnDestroy {
         return [...this.defAllColumns];
     }
 
-    /** Apply custom column widths via dynamic <style> element */
+    /** Apply custom column widths, borders, and resize handles via dynamic <style> element */
     private applyColumnStyles() {
         if (!this.columnStyleElement) {
             this.columnStyleElement = document.createElement('style');
             this.columnStyleElement.id = 'device-tree-column-styles';
             document.head.appendChild(this.columnStyleElement);
         }
-        const rules = this.columnSettings.map(s => {
-            if (!s.width) return '';
-            return `.tags-panel .mat-column-${s.key} { flex: 0 0 ${s.width}px !important; }`;
-        }).filter(r => r);
+        const rules: string[] = [];
+
+        // Column width rules
+        for (const s of this.columnSettings) {
+            const w = this.resizeWidths[s.key] || s.width;
+            if (w) {
+                rules.push(`.tags-panel .mat-column-${s.key} { flex: 0 0 ${w}px !important; }`);
+            }
+        }
+
+        // Header cell borders and resize handle (exclude system/frozen columns)
+        const systemCols = [...DeviceTreeComponent.LEFT_FROZEN_COLUMNS, ...DeviceTreeComponent.RIGHT_FROZEN_COLUMNS];
+        const notSelector = systemCols.map(c => `:not(.mat-column-${c})`).join('');
+        
+        // All header cells get bottom border
+        rules.push(`
+.tags-panel mat-header-cell,
+.tags-panel .mat-mdc-header-cell {
+    border-bottom: 2px solid rgba(128, 128, 128, 0.4) !important;
+}`);
+        
+        // Only data columns get right border, position relative, and resize handle
+        rules.push(`
+.tags-panel mat-header-cell${notSelector},
+.tags-panel .mat-mdc-header-cell${notSelector} {
+    position: relative !important;
+    border-right: 1px solid rgba(128, 128, 128, 0.2) !important;
+}
+.tags-panel mat-header-cell${notSelector}::after,
+.tags-panel .mat-mdc-header-cell${notSelector}::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 100;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+.tags-panel mat-header-cell${notSelector}::after:hover,
+.tags-panel .mat-mdc-header-cell${notSelector}::after:hover {
+    background-color: var(--primaryColor, #1976d2);
+    opacity: 0.6;
+}`);
+
+        // Data cell styles (text overflow, borders)
+        rules.push(`
+.tags-panel mat-cell,
+.tags-panel .mat-mdc-cell,
+.tags-panel .mdc-data-table__cell {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.25) !important;
+}
+.tags-panel mat-row,
+.tags-panel .mat-mdc-row,
+.tags-panel .my-mat-row {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.12) !important;
+}`);
+
         this.columnStyleElement.textContent = rules.join('\n');
     }
 

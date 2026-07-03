@@ -4,30 +4,58 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 using Runtime;
 using Runtime.Alarms;
+using Runtime.ApiKeys;
 using Runtime.Jobs;
 using Runtime.Notificator;
 using Runtime.Project;
+using Runtime.Scheduler;
+using Runtime.Storage;
+using Runtime.Users;
 
 namespace Server;
 
 public class HostService : IHostedService
 {
     public ILogger<HostService> _logger;
-    private readonly IProjectService _projectService;
+    private readonly ProjectStorage _projectStorage;
+    private readonly AlarmStorage _alarmStorage;
+    private readonly NotifyStorage _notifyStorage;
+    private readonly SchedulerStorage _schedulerStorage;
+    private readonly ApiKeyStorage _apiKeyStorage;
+    private readonly UserService _userService;
+    private readonly Currentstorage _currentstorage;
+    private readonly QuestDb _questDb;
+    private readonly ProjectService _projectService;
     private readonly IJobManager _jobManager;
-    private readonly IAlarmService _alarmService;
-    private readonly INotificatorService _notificatorService;
+    private readonly AlarmService _alarmService;
+    private readonly NotificatorService _notificatorService;
     private readonly IHubContext<DataHub> _hubContext;
 
     public HostService(
         ILogger<HostService> logger,
-        IProjectService projectService,
+        ProjectStorage projectStorage,
+        AlarmStorage alarmStorage,
+        NotifyStorage notifyStorage,
+        SchedulerStorage schedulerStorage,
+        ApiKeyStorage apiKeyStorage,
+        UserService userService,
+        Currentstorage currentstorage,
+        QuestDb questDb,
+        ProjectService projectService,
         IJobManager jobManager,
-        IAlarmService alarmService,
-        INotificatorService notificatorService,
+        AlarmService alarmService,
+        NotificatorService notificatorService,
         IHubContext<DataHub> hubContext)
     {
         _logger = logger;
+        _projectStorage = projectStorage;
+        _alarmStorage = alarmStorage;
+        _notifyStorage = notifyStorage;
+        _schedulerStorage = schedulerStorage;
+        _apiKeyStorage = apiKeyStorage;
+        _userService = userService;
+        _currentstorage = currentstorage;
+        _questDb = questDb;
         _projectService = projectService;
         _jobManager = jobManager;
         _alarmService = alarmService;
@@ -38,6 +66,18 @@ public class HostService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("FUXA Start");
+
+        // Initialize all database tables
+        _logger.LogInformation("Initializing database tables...");
+        _projectStorage.InitTables();
+        _alarmStorage.InitTables();
+        _notifyStorage.InitTables();
+        _schedulerStorage.InitTables();
+        _apiKeyStorage.InitTables();
+        _userService.InitTables();
+        _currentstorage.InitTables();
+        //_questDb.InitTables();
+
         _logger.LogInformation("GetProjectData");
         await _projectService.Load();
 

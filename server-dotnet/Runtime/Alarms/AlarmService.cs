@@ -9,7 +9,7 @@ namespace Runtime.Alarms;
 public class AlarmService : IAlarmService
 {
     private readonly ILogger<AlarmService> _logger;
-    private readonly IAlarmStorage _storage;
+    private readonly AlarmStorage _storage;
     private readonly IProjectService _project;
 
     private readonly ConcurrentDictionary<string, List<RuntimeAlarm>> _alarms = new();
@@ -18,7 +18,7 @@ public class AlarmService : IAlarmService
 
     public event Action? OnAlarmsStatusChanged;
 
-    public AlarmService(ILogger<AlarmService> logger, IAlarmStorage storage, IProjectService project)
+    public AlarmService(ILogger<AlarmService> logger, AlarmStorage storage, IProjectService project)
     {
         _logger = logger;
         _storage = storage;

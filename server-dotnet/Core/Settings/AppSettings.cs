@@ -1,25 +1,39 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Core.Settings;
 
 public class AppSettings
 {
-    private static AppSettings settings {  get; set; } = new AppSettings();
+    private static AppSettings? _instance;
 
     public static AppSettings GetSettings()
     {
-        return settings;
+        return _instance ?? throw new InvalidOperationException("AppSettings has not been initialized. Call AppSettings.Initialize(configuration) first.");
     }
 
     private string rootDir { get; set; } = string.Empty;
-    private AppSettings()
+
+    /// <summary>
+    /// Initialize AppSettings from ASP.NET Core IConfiguration (appsettings.json "Fuxa" section).
+    /// Must be called once during startup before any GetSettings() call.
+    /// </summary>
+    public static AppSettings Initialize(IConfiguration configuration)
+    {
+        var instance = new AppSettings();
+        instance.SetupDirectories();
+        instance.LoadFromConfiguration(configuration);
+        _instance = instance;
+        return instance;
+    }
+
+    private AppSettings() { }
+
+    /// <summary>
+    /// Create all required runtime directories.
+    /// </summary>
+    private void SetupDirectories()
     {
         rootDir = AppDomain.CurrentDomain.BaseDirectory;
         AppDir = rootDir;
@@ -32,88 +46,37 @@ public class AppSettings
             WorkDir = Path.Combine(rootDir, WorkDir);
         }
         DbDir = Path.Combine(rootDir, "_db");
-        if (!Directory.Exists(DbDir))
-        {
-            Directory.CreateDirectory(DbDir);
-        }
+        if (!Directory.Exists(DbDir)) Directory.CreateDirectory(DbDir);
         LogDir = Path.Combine(rootDir, "_logs");
-        if (!Directory.Exists(LogDir))
-        {
-            Directory.CreateDirectory(LogDir);
-        }
+        if (!Directory.Exists(LogDir)) Directory.CreateDirectory(LogDir);
         PackageDir = Path.Combine(rootDir, "_pkg");
-        if (!Directory.Exists(PackageDir))
-        {
-            Directory.CreateDirectory(PackageDir);
-        }
+        if (!Directory.Exists(PackageDir)) Directory.CreateDirectory(PackageDir);
         UploadFileDir = Path.Combine(WorkDir, "_upload");
-        if (!Directory.Exists(UploadFileDir))
-        {
-            Directory.CreateDirectory(UploadFileDir);
-        }
+        if (!Directory.Exists(UploadFileDir)) Directory.CreateDirectory(UploadFileDir);
         ImagesFileDir = Path.Combine(rootDir, "_images");
-        if (!Directory.Exists(ImagesFileDir))
-        {
-            Directory.CreateDirectory(ImagesFileDir);
-        }
+        if (!Directory.Exists(ImagesFileDir)) Directory.CreateDirectory(ImagesFileDir);
         WidgetsFileDir = Path.Combine(rootDir, "_widgets");
-        if (!Directory.Exists(WidgetsFileDir))
-        {
-            Directory.CreateDirectory(WidgetsFileDir);
-        }
+        if (!Directory.Exists(WidgetsFileDir)) Directory.CreateDirectory(WidgetsFileDir);
         ReoprtsDir = Path.Combine(rootDir, "_reports");
-        if (!Directory.Exists(ReoprtsDir))
-        {
-            Directory.CreateDirectory(ReoprtsDir);
-        }
+        if (!Directory.Exists(ReoprtsDir)) Directory.CreateDirectory(ReoprtsDir);
         WebcamSnapShotsDir = Path.Combine(rootDir, "_webcam_snapshots");
+        if (!Directory.Exists(WebcamSnapShotsDir)) Directory.CreateDirectory(WebcamSnapShotsDir);
         HttpUploadFileStatic = "resources";
         Environment = System.Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "prod";
+    }
 
-        var userSettingsFile = Path.Combine(WorkDir, "mysettings.json");
-        UserSettingsFile = userSettingsFile;
-        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        Settings settings;
-        if (File.Exists(userSettingsFile))
+    /// <summary>
+    /// Bind the "Fuxa" section from IConfiguration to all settings properties.
+    /// If the section is missing or empty, defaults are preserved.
+    /// </summary>
+    private void LoadFromConfiguration(IConfiguration configuration)
+    {
+        var section = configuration.GetSection("Fuxa");
+        if (section.Exists())
         {
-            var json = File.ReadAllText(userSettingsFile);
-            settings = JsonSerializer.Deserialize<Settings>(json, jsonOptions) ?? new Settings();
+            section.Bind(this);
         }
-        else
-        {
-            settings = new Settings();
-            File.WriteAllText(userSettingsFile, JsonSerializer.Serialize(settings));
-        }
-        Version = settings.Version;
-        Language = settings.Language;
-        HideEditorOnboarding = settings.HideEditorOnboarding;
-        UiPort = settings.UiPort;
-        LogApiLevel = settings.LogApiLevel;
-        DaqEnabled = settings.DaqEnabled;
-        DaqTokenizer = settings.DaqTokenizer;
-        Logs = settings.Logs;
-        BroadcastAll = settings.BroadcastAll;
-        AllowedOrigins = settings.AllowedOrigins;
-        SecureEnabled = settings.SecureEnabled;
-        TokenExpiresIn = settings.TokenExpiresIn;
-        EnableRefreshCookieAuth = settings.EnableRefreshCookieAuth;
-        RefreshTokenExpiresIn = settings.RefreshTokenExpiresIn;
-        SecureOnlyEditor = settings.SecureOnlyEditor;
-        HeartbeatIntervalSec = settings.HeartbeatIntervalSec;
-        WebcamSnapShotsCleanup = settings.WebcamSnapShotsCleanup;
-        WebcamSnapShotsRetain = settings.WebcamSnapShotsRetain;
-        SwaggerEnabled = settings.SwaggerEnabled;
-        NodeRedEnabled = settings.NodeRedEnabled;
-        NodeRedAuthMode = settings.NodeRedAuthMode;
-        NodeRedUnsafeModules = settings.NodeRedUnsafeModules;
-        Alarms = settings.Alarms;
-        Stmp = settings.Stmp;
-        DaqStore = settings.DaqStore;
-        Database = settings.Database;
-        LogFull = settings.LogFull;
-        UserRole = settings.UserRole;
-
-
+        UserSettingsFile = Path.Combine(WorkDir, "appsettings.json");
     }
     #region settings content
     public double Version { get; set; } = 1.4;
@@ -148,6 +111,8 @@ public class AppSettings
     public string RefreshTokenExpiresIn { get; set; } = "7d";
 
     public bool SecureOnlyEditor { get; set; } = false;
+
+    public string SecretCode { get; set; } = string.Empty;
 
     public int HeartbeatIntervalSec { get; set; } = 10;
 
@@ -202,6 +167,7 @@ public class AppSettings
         HideEditorOnboarding = userSettings.HideEditorOnboarding;
         BroadcastAll = userSettings.BroadcastAll;
         SecureEnabled = userSettings.SecureEnabled;
+        SecretCode = userSettings.SecretCode;
         LogFull = userSettings.LogFull;
         UserRole = userSettings.UserRole;
         NodeRedEnabled = userSettings.NodeRedEnabled;

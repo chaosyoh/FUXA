@@ -17,6 +17,11 @@ public class DeviceManager : BackgroundService, IDeviceRegistry
     private readonly IProjectService _project;
     private CancellationToken _stoppingToken;
 
+    /// <summary>
+    /// FuxaServer 设备的固定 ID，与 Node.js 端保持一致
+    /// </summary>
+    private const string FuxaServerId = "0";
+
     public DeviceManager(ILogger<DeviceManager> logger, IServiceProvider serviceProvider, IProjectService project)
     {
         _logger = logger;
@@ -250,6 +255,14 @@ public class DeviceManager : BackgroundService, IDeviceRegistry
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<DeviceBackgrouService>>();
         var writer = scope.ServiceProvider.GetRequiredService<ChannelWriter<Tag>>();
         var collector = new DeviceBackgrouService(config, client, logger, writer);
+
+        // Bind connection status callback (skip FuxaServer itself)
+        if (config.Type != DeviceType.FuxaServer)
+        {
+            var deviceId = config.Id;
+            collector.BindConnectionStatusCallback(status => UpdateDeviceConnectionStatus(deviceId, status));
+        }
+
         await collector.StartAsync(cancellationToken);
         return collector;
     }
@@ -264,6 +277,19 @@ public class DeviceManager : BackgroundService, IDeviceRegistry
         catch (Exception ex)
         {
             _logger.LogError(ex, "停止采集器时发生错误");
+        }
+    }
+
+    /// <summary>
+    /// 将设备连接状态数值（0=离线，1=在线，3=警告）写入 FuxaServer 对应的 Connection Status 标签
+    /// 对应 Node.js 端 setDeviceConnectionStatus 函数
+    /// </summary>
+    private void UpdateDeviceConnectionStatus(string deviceId, int status)
+    {
+        if (_activeCollectors.TryGetValue(FuxaServerId, out var fuxaCollector) &&
+            fuxaCollector.Client is FuxaServerClient fuxaServer)
+        {
+            fuxaServer.SetConnectionStatus(deviceId, status);
         }
     }
 

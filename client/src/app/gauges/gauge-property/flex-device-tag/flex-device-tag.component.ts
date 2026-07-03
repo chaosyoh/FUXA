@@ -154,7 +154,7 @@ export class FlexDeviceTagComponent implements OnInit, OnChanges {
                 name: device.name,
                 tags: [],
             };
-            Object.values(device.tags).forEach((tag: Tag) => {
+            Object.values(device.tags || {}).forEach((tag: Tag) => {
                 const deviceTag = <DeviceTagOption>{
                     id: tag.id,
                     name: this._tagToVariableName(tag),

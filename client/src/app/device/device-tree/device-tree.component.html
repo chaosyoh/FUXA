@@ -10,7 +10,7 @@
                 matTooltip="{{'device.edit-device' | translate}}">
                 <mat-icon>settings</mat-icon>
             </button>
-            <button mat-icon-button (click)="deleteSelectedDevice()" [disabled]="readonly || !selectedNode || selectedNode?.type !== 'device'"
+            <button mat-icon-button (click)="deleteSelectedDevice()" [disabled]="readonly || !selectedNode || selectedNode?.type !== 'device' || selectedNode?.deviceId === '0'"
                 matTooltip="{{'device.delete-device' | translate}}">
                 <mat-icon>delete_forever</mat-icon>
             </button>
@@ -134,12 +134,27 @@
                     <!-- ID Column -->
                     <ng-container matColumnDef="device">
                         <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-id' | translate}} </mat-header-cell>
-                        <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
+                        <mat-cell *matCellDef="let element" class="id-copyable" (click)="onCopyId(element)" matTooltip="{{element.id}} — 点击复制"> {{element.id}} </mat-cell>
                     </ng-container>
 
                     <!-- Type Column -->
                     <ng-container matColumnDef="type">
-                        <mat-header-cell *matHeaderCellDef mat-sort-header> {{'device.list-type' | translate}} </mat-header-cell>
+                        <mat-header-cell *matHeaderCellDef mat-sort-header>
+                            <span>{{'device.list-type' | translate}}</span>
+                            <button mat-icon-button class="header-filter-btn" [matMenuTriggerFor]="typeFilterMenu"
+                                (click)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+                                <mat-icon [class.filter-active]="isTypeFilterActive()">filter_list</mat-icon>
+                            </button>
+                            <mat-menu #typeFilterMenu="matMenu" class="filter-menu-panel" (click)="$event.stopPropagation()">
+                                <div class="filter-menu-item filter-select-all" (click)="toggleAllTypes()">
+                                    <mat-checkbox [checked]="isAllTypesSelected()" [indeterminate]="isTypeIndeterminate()">全部</mat-checkbox>
+                                </div>
+                                <div class="filter-menu-divider"></div>
+                                <div *ngFor="let t of typeFilterOptions" class="filter-menu-item" (click)="toggleTypeFilter(t)">
+                                    <mat-checkbox [checked]="selectedTypes.has(t)">{{t}}</mat-checkbox>
+                                </div>
+                            </mat-menu>
+                        </mat-header-cell>
                         <mat-cell *matCellDef="let element"> {{element.type}} </mat-cell>
                     </ng-container>
 

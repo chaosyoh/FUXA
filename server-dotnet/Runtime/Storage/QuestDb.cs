@@ -5,55 +5,48 @@ using SqlSugar;
 
 namespace Runtime.Storage;
 
-public class QuestDb : IStorage
+public class QuestDb
 {
     private readonly ILogger<QuestDb> _logger;
-    private readonly ICurrentstorage _currentstorage;
     private readonly ISqlSugarClient _db;
 
-    public QuestDb(ILogger<QuestDb> logger, ICurrentstorage currentstorage)
+    public QuestDb(ILogger<QuestDb> logger, AppSettings settings)
     {
         _logger = logger;
-        _currentstorage = currentstorage;
-        var settings = AppSettings.GetSettings();
         _db = new SqlSugarScope(new ConnectionConfig()
         {
             ConnectionString = settings.DaqStore.Url,
             DbType = DbType.QuestDB,
             IsAutoCloseConnection = true,
         });
+    }
 
-
+    public void InitTables()
+    {
+        try
+        {
+            _db.Ado.ExecuteCommand("CREATE TABLE if not exists meters (dt DATETIME, tag_id TEXT, tag_value TEXT);");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "QuestDb meters table initialization failed!");
+        }
     }
 
     public Task AddDaqValues(Dictionary<string, Tag> tagValues, string deviceId)
     {
         var now = DateTime.Now;
         List<Meters> values = new List<Meters>();
-        List<TagValue> dataToRestore = new List<TagValue>();
         foreach (var tag in tagValues.Values)
         {
-            var value = tag.Value?.ToString();
-            if (string.IsNullOrEmpty(value))
-            {
-                dataToRestore.Add(new TagValue
-                {
-                    Id = tag.Id,
-                    DeviceId = deviceId,
-                    Value = value,
-                });
-            }
-
             if (!tag.Daq.Enabled) continue;
             values.Add(new Meters
             {
                 Dt = now,
                 Tag_Id = tag.Id,
-                Tag_Value = value,
+                Tag_Value = tag.Value?.ToString(),
             });
         }
-        ;
-
         return _db.Insertable(values).ExecuteCommandAsync();
     }
 
@@ -64,13 +57,6 @@ public class QuestDb : IStorage
             Dt = x.Dt,
             Value = x.Tag_Value,
         }).ToListAsync();
-    }
-
-    public Dictionary<string, bool> GetDaqMap(string tagId)
-    {
-        var dummy = new Dictionary<string, bool>();
-        dummy.Add(tagId, true);
-        return dummy;
     }
 
     public void Close()

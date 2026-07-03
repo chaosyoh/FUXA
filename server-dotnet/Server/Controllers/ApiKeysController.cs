@@ -9,9 +9,9 @@ namespace Server.Controllers;
 public class ApiKeysController : ControllerBase
 {
     private readonly ILogger<ApiKeysController> _logger;
-    private readonly IApiKeyStorage _apiKeyStorage;
+    private readonly ApiKeyStorage _apiKeyStorage;
 
-    public ApiKeysController(ILogger<ApiKeysController> logger, IApiKeyStorage apiKeyStorage)
+    public ApiKeysController(ILogger<ApiKeysController> logger, ApiKeyStorage apiKeyStorage)
     {
         _logger = logger;
         _apiKeyStorage = apiKeyStorage;

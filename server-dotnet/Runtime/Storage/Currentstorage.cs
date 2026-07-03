@@ -1,35 +1,31 @@
 ﻿using Core.Models;
-using Core.Settings;
 using Microsoft.Extensions.Logging;
-using Runtime.Storage;
 using SqlSugar;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Runtime.Storage;
 
-public class Currentstorage : ICurrentstorage
+public class Currentstorage
 {
     public Dictionary<string, Tag> DataQueue = new Dictionary<string, Tag>();
 
     private readonly ILogger<Currentstorage> _logger;
+    private readonly ISqlSugarClient _db;
 
-    private readonly ISqlSugarClient db_current;
-
-    public Currentstorage(ILogger<Currentstorage> logger, ISqlSugarProvider provider)
+    public Currentstorage(ILogger<Currentstorage> logger, ISqlSugarClient db)
     {
         _logger = logger;
-        db_current = provider.GetClient("Currentstorage");
+        _db = db;
+    }
+
+    public void InitTables()
+    {
         try
         {
-            db_current.CodeFirst.InitTables<TagStorage>();
+            _db.CodeFirst.InitTables<TagStorage>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "currentstorage.bind failed!");
+            _logger.LogError(ex, "currentstorage table initialization failed!");
         }
     }
 
@@ -41,7 +37,7 @@ public class Currentstorage : ICurrentstorage
             Value = x.Value.Value?.ToString(),
             DeviceId = x.Value.DeviceId
         }).ToList();
-        await db_current.Storageable(list).ExecuteCommandAsync();
+        await _db.Storageable(list).ExecuteCommandAsync();
     }
 
     public void SetValues(List<Tag> tags)
@@ -54,7 +50,7 @@ public class Currentstorage : ICurrentstorage
 
     public Task<List<TagValue>> GetValuesByDeviceId(string deviceId)
     {
-        return db_current.Queryable<TagStorage>().Where(x => x.DeviceId == deviceId)
+        return _db.Queryable<TagStorage>().Where(x => x.DeviceId == deviceId)
             .Select(x => new TagValue
             {
                 Id = x.TagId,
@@ -64,12 +60,12 @@ public class Currentstorage : ICurrentstorage
 
     public void Close()
     {
-        db_current.Close();
+        _db.Close();
     }
 
     public async Task ClearAll()
     {
-        await db_current.Deleteable<TagStorage>().ExecuteCommandAsync();
+        await _db.Deleteable<TagStorage>().ExecuteCommandAsync();
         DataQueue.Clear();
     }
 }

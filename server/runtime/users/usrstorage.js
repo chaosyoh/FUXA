@@ -37,7 +37,17 @@ async function _bind() {
             var dbfile = path.join(settings.workDir, 'users.fuxap.db');
             dbfileExist = await adapter.init({ dbFile: dbfile, logger, moduleName: 'usrstorage' });
         } else {
-            dbfileExist = await adapter.init({ logger, moduleName: 'usrstorage' });
+            await adapter.init({ logger, moduleName: 'usrstorage' });
+            // For non-SQLite engines, check if data already exists in DB
+            try {
+                const checkSql = engine === 'mssql'
+                    ? 'SELECT TOP 1 username FROM users'
+                    : 'SELECT username FROM users LIMIT 1';
+                const rows = await adapter.all(checkSql);
+                dbfileExist = rows && rows.length > 0;
+            } catch (e) {
+                dbfileExist = false;
+            }
         }
         const ddl = dbAdapter.getDDL(engine, 'users');
         const groupsCol = adapter.quoteId('groups');

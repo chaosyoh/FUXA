@@ -26,6 +26,7 @@ public class Settings
     public bool EnableRefreshCookieAuth { get; set; } = false;
     public string RefreshTokenExpiresIn { get; set; } = "7d";
     public bool SecureOnlyEditor { get; set; } = false;
+    public string SecretCode { get; set; } = string.Empty;
     public int HeartbeatIntervalSec { get; set; } = 10;
     public string WebcamSnapShotsDir { get; set; } = "_webcam_snapshots";
     public bool WebcamSnapShotsCleanup { get; set; } = false;

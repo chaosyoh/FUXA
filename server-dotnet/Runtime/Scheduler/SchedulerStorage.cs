@@ -1,15 +1,13 @@
 using Core.Models;
-using Core.Settings;
 using Core.Utils;
 using Microsoft.Extensions.Logging;
-using Runtime.Storage;
 using SqlSugar;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Runtime.Scheduler;
 
-public class SchedulerStorage : ISchedulerStorage
+public class SchedulerStorage
 {
     private readonly ILogger<SchedulerStorage> _logger;
     private readonly ISqlSugarClient _db;
@@ -18,17 +16,21 @@ public class SchedulerStorage : ISchedulerStorage
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public SchedulerStorage(ILogger<SchedulerStorage> logger, ISqlSugarProvider provider)
+    public SchedulerStorage(ILogger<SchedulerStorage> logger, ISqlSugarClient db)
     {
         _logger = logger;
-        _db = provider.GetClient("SchedulerStorage");
+        _db = db;
+    }
+
+    public void InitTables()
+    {
         try
         {
             _db.CodeFirst.InitTables<SchedulerEntity>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "scheduler storage initialization failed!");
+            _logger.LogError(ex, "scheduler storage table initialization failed!");
         }
     }
 

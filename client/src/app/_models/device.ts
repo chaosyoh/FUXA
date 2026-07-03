@@ -503,7 +503,7 @@ export class DeviceFolder {
 export class DevicesUtils {
     static getDeviceTagText(devices: Device[], id: string): string {
         for (let i = 0; i < devices.length; i++) {
-            if (devices[i].tags[id]) {
+            if (devices[i].tags?.[id]) {
                 return `${devices[i].name} - ${devices[i].tags[id].name}`;
             }
         }
@@ -512,7 +512,7 @@ export class DevicesUtils {
 
     static getDeviceFromTagId(devices: Device[], id: string): Device {
         for (let i = 0; i < devices.length; i++) {
-            if (devices[i].tags[id]) {
+            if (devices[i].tags?.[id]) {
                 return devices[i];
             }
         }
@@ -521,7 +521,7 @@ export class DevicesUtils {
 
     static getTagFromTagId(devices: Device[], id: string): Tag {
         for (let i = 0; i < devices.length; i++) {
-            if (devices[i].tags[id]) {
+            if (devices[i].tags?.[id]) {
                 return devices[i].tags[id];
             }
         }
@@ -529,7 +529,7 @@ export class DevicesUtils {
     }
 
     static getTagFromTagAddress(device: Device, address: string): Tag {
-        return <Tag>Object.values(device.tags).find((tag: Tag) => tag.address === address);
+        return <Tag>Object.values(device.tags || {}).find((tag: Tag) => tag.address === address);
     }
 
     //#region Converter
