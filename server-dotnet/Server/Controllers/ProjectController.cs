@@ -183,7 +183,7 @@ public class ProjectController : ControllerBase
 
         try
         {
-            var rows = await _prjStorage.GetSection(TableType.DEVICESSECURITY, name);
+            var rows = await _prjStorage.GetRows<DevicesSecurityRow>(name);
             if (rows.Count > 0)
             {
                 var value = System.Text.Json.JsonSerializer.Deserialize<object>(rows[0].Value, Core.Utils.JsonHelper.Default);
@@ -214,13 +214,11 @@ public class ProjectController : ControllerBase
 
         try
         {
-            var section = new SqlSection
+            await _prjStorage.UpsertRow(new DevicesSecurityRow
             {
-                Table = TableType.DEVICESSECURITY,
                 Name = req.Params.Name,
-                Value = req.Params.Value
-            };
-            await _prjStorage.SetSection(section);
+                Value = ProjectStorage.SerializeValue(req.Params.Value)
+            });
             return Ok();
         }
         catch (Exception ex)

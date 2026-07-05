@@ -1,9 +1,8 @@
-﻿using Core.Const;
-using Core.Models;
-using Core.Utils;
+﻿using Core.Models;
 using Microsoft.Extensions.Logging;
 using SqlSugar;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Runtime.Project;
@@ -12,17 +11,18 @@ public class ProjectStorage
 {
     private readonly ILogger<ProjectStorage> _logger;
     private readonly ISqlSugarClient _db;
-    private static JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly Type[] _tableEntityTypes = new[]
-    {
+    private static readonly Type[] _tableEntityTypes =
+    [
         typeof(GeneralRow), typeof(ViewRow), typeof(DeviceRow), typeof(DevicesSecurityRow),
         typeof(TextRow), typeof(ProjectAlarmRow), typeof(ProjectNotificationRow),
         typeof(ScriptRow), typeof(ReportRow), typeof(LocationRow),
-    };
+    ];
 
     public ProjectStorage(ILogger<ProjectStorage> logger, ISqlSugarClient db)
     {
@@ -44,78 +44,90 @@ public class ProjectStorage
 
     public async Task SetDefault()
     {
-        var sections = new List<SqlSection>();
-        sections.Add(new SqlSection
+        await UpsertRow(new GeneralRow { Name = "Version", Value = "\"1.0.0\"" });
+        await UpsertRow(new DeviceRow
         {
-            Table = TableType.GENERAL,
-            Name = "Version",
-            Value = "1.0.0"
-        });
-        sections.Add(new SqlSection
-        {
-            Table = TableType.DEVICES,
             Name = "Server",
-            Value = new
+            Value = JsonSerializer.Serialize(new
             {
                 Id = "0",
                 Name = "FUXA Server",
                 Type = "FuxaServer",
                 Property = new { }
-            }
+            }, _jsonOptions)
         });
-        await SetSections(sections);
     }
 
-    public async Task SetSections(List<SqlSection> sections)
-    {
-        foreach (var section in sections)
-        {
-            var value = SerializeValue(section.Value, _jsonOptions);
-            var sql = $"INSERT INTO {section.Table} (name, value) VALUES(@name, @value) ON DUPLICATE KEY UPDATE value = VALUES(value)";
-            await _db.Ado.ExecuteCommandAsync(sql, new { name = section.Name, value });
-        }
-    }
+    #region Typed CRUD operations
 
-    public async Task SetSection(SqlSection section)
+    /// <summary>
+    /// Read all rows from a typed table, optionally filtered by name.
+    /// </summary>
+    public Task<List<T>> GetRows<T>(string? name = null) where T : RowData, new()
     {
-        var value = SerializeValue(section.Value, _jsonOptions);
-        var sql = $"INSERT INTO {section.Table} (name, value) VALUES(@name, @value) ON DUPLICATE KEY UPDATE value = VALUES(value)";
-        await _db.Ado.ExecuteCommandAsync(sql, new { name = section.Name, value });
-    }
-
-    public Task<List<RowData>> GetSection(string table, string? name = null)
-    {
-        return _db.Queryable<RowData>().AS(table)
+        return _db.Queryable<T>()
             .WhereIF(!string.IsNullOrEmpty(name), x => x.Name == name)
             .ToListAsync();
     }
 
-    public Task DeleteSection(SqlSection section)
+    /// <summary>
+    /// Upsert a single row using its PK (Name). Database-agnostic.
+    /// </summary>
+    public Task<int> UpsertRow<T>(T row) where T : RowData, new()
     {
-        return _db.Deleteable<RowData>().AS(section.Table)
-            .Where(x => x.Name == section.Name)
+        return _db.Storageable(new[] { row }).ExecuteCommandAsync();
+    }
+
+    /// <summary>
+    /// Batch upsert rows using their PKs (Name). Database-agnostic.
+    /// </summary>
+    public Task<int> UpsertRows<T>(List<T> rows) where T : RowData, new()
+    {
+        if (rows.Count == 0) return Task.FromResult(0);
+        return _db.Storageable(rows).ExecuteCommandAsync();
+    }
+
+    /// <summary>
+    /// Delete a single row by name from a typed table.
+    /// </summary>
+    public Task<int> DeleteRow<T>(string name) where T : RowData, new()
+    {
+        return _db.Deleteable<T>()
+            .Where(x => x.Name == name)
             .ExecuteCommandAsync();
     }
 
+    #endregion
+
     public async Task ClearAll()
     {
-        var tables = new[] {
-            TableType.GENERAL, TableType.VIEWS, TableType.DEVICES,
-            TableType.DEVICESSECURITY, TableType.TEXTS, TableType.ALARMS,
-            TableType.NOTIFICATIONS, TableType.SCRIPTS, TableType.REPORTS,
-            TableType.LOCATIONS
-        };
-        foreach (var tableName in tables)
-        {
-            await _db.Ado.ExecuteCommandAsync($"DELETE FROM {tableName}");
-        }
+        await _db.Deleteable<GeneralRow>().ExecuteCommandAsync();
+        await _db.Deleteable<ViewRow>().ExecuteCommandAsync();
+        await _db.Deleteable<DeviceRow>().ExecuteCommandAsync();
+        await _db.Deleteable<DevicesSecurityRow>().ExecuteCommandAsync();
+        await _db.Deleteable<TextRow>().ExecuteCommandAsync();
+        await _db.Deleteable<ProjectAlarmRow>().ExecuteCommandAsync();
+        await _db.Deleteable<ProjectNotificationRow>().ExecuteCommandAsync();
+        await _db.Deleteable<ScriptRow>().ExecuteCommandAsync();
+        await _db.Deleteable<ReportRow>().ExecuteCommandAsync();
+        await _db.Deleteable<LocationRow>().ExecuteCommandAsync();
     }
 
-    private static string SerializeValue(object? value, JsonSerializerOptions options)
+    #region Serialization helpers
+
+    /// <summary>
+    /// Serialize any value (JsonElement, JsonNode, or object) to a JSON string for storage.
+    /// </summary>
+    public static string SerializeValue(object? value)
     {
-        // [FromBody] object? is bound as System.Text.Json.JsonElement by ASP.NET Core.
         if (value is JsonElement je)
             return je.GetRawText();
-        return JsonSerializer.Serialize(value, options);
+        if (value is JsonNode jn)
+            return jn.ToJsonString();
+        if (value is string s)
+            return s;
+        return JsonSerializer.Serialize(value, _jsonOptions);
     }
+
+    #endregion
 }

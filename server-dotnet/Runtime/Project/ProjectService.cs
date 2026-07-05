@@ -38,7 +38,7 @@ public class ProjectService : IProjectService
         ArchiveDic.Clear();
 
         #region load general data
-        var grows = await _prjStorage.GetSection(TableType.GENERAL);
+        var grows = await _prjStorage.GetRows<GeneralRow>();
         foreach (var row in grows)
         {
             if (row.Name == ProjectDataCmdType.HmiLayout)
@@ -85,7 +85,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load views
-        var views = await _prjStorage.GetSection(TableType.VIEWS);
+        var views = await _prjStorage.GetRows<ViewRow>();
         foreach (var row in views)
         {
             var view = JsonSerializer.Deserialize<View>(row.Value, _options);
@@ -95,7 +95,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load devices
-        var devices = await _prjStorage.GetSection(TableType.DEVICES);
+        var devices = await _prjStorage.GetRows<DeviceRow>();
         foreach (var row in devices)
         {
             var d = JsonSerializer.Deserialize<Device>(row.Value, _options) ?? new Device();
@@ -131,7 +131,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load texts
-        var texts = await _prjStorage.GetSection(TableType.TEXTS);
+        var texts = await _prjStorage.GetRows<TextRow>();
         foreach (var row in texts)
         {
             var node = JsonNode.Parse(row.Value);
@@ -140,7 +140,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load alarms
-        var alarms = await _prjStorage.GetSection(TableType.ALARMS);
+        var alarms = await _prjStorage.GetRows<ProjectAlarmRow>();
         foreach (var row in alarms)
         {
             var value = JsonSerializer.Deserialize<Alarm>(row.Value, _options);
@@ -150,7 +150,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load notifications
-        var notifications = await _prjStorage.GetSection(TableType.NOTIFICATIONS);
+        var notifications = await _prjStorage.GetRows<ProjectNotificationRow>();
         foreach (var row in notifications)
         {
             var value = JsonSerializer.Deserialize<Notification>(row.Value, _options);
@@ -160,7 +160,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load scripts
-        var scripts = await _prjStorage.GetSection(TableType.SCRIPTS);
+        var scripts = await _prjStorage.GetRows<ScriptRow>();
         foreach (var row in scripts)
         {
             var node = JsonNode.Parse(row.Value);
@@ -169,7 +169,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load reports
-        var reports = await _prjStorage.GetSection(TableType.REPORTS);
+        var reports = await _prjStorage.GetRows<ReportRow>();
         foreach (var row in reports)
         {
             var node = JsonNode.Parse(row.Value);
@@ -178,7 +178,7 @@ public class ProjectService : IProjectService
         #endregion
 
         #region load MapsLocations
-        var locations = await _prjStorage.GetSection(TableType.LOCATIONS);
+        var locations = await _prjStorage.GetRows<LocationRow>();
         foreach (var row in locations)
         {
             var node = JsonNode.Parse(row.Value);
@@ -189,17 +189,16 @@ public class ProjectService : IProjectService
 
     public async Task SetProjectData(string cmd, JsonElement value)
     {
-        var toremove = false;
-        var section = new SqlSection { Table = "", Name = "", Value = value };
+        var jsonValue = value.GetRawText();
+
         if (cmd == ProjectDataCmdType.SetView)
         {
             var view = value.Deserialize<View>(_options);
             if (view == null) return;
-            section.Table = TableType.VIEWS;
-            section.Name = view.Id;
             var idx = data.Hmi.Views.FindIndex(x => x.Id == view.Id);
             if (idx >= 0) data.Hmi.Views[idx] = view;
             else data.Hmi.Views.Add(view);
+            await _prjStorage.UpsertRow(new ViewRow { Name = view.Id, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelView)
         {
@@ -207,34 +206,29 @@ public class ProjectService : IProjectService
             if (view == null) return;
             var idx = data.Hmi.Views.FindIndex(x => x.Id == view.Id);
             if (idx == -1) return;
-            toremove = true;
-            section.Table = TableType.VIEWS;
-            section.Name = view.Id;
             data.Hmi.Views.RemoveAt(idx);
+            await _prjStorage.DeleteRow<ViewRow>(view.Id);
         }
         else if (cmd == ProjectDataCmdType.HmiLayout)
         {
             var layout = value.Deserialize<LayoutSettings>(_options);
             if (layout == null) return;
             data.Hmi.Layout = layout;
-            section.Table = TableType.GENERAL;
-            section.Name = cmd;
+            await _prjStorage.UpsertRow(new GeneralRow { Name = cmd, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.MobileLayout)
         {
             var mobileLayout = value.Deserialize<LayoutSettings>(_options);
             if (mobileLayout == null) return;
             data.Hmi.MobileLayout = mobileLayout;
-            section.Table = TableType.GENERAL;
-            section.Name = cmd;
+            await _prjStorage.UpsertRow(new GeneralRow { Name = cmd, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.SetDevice)
         {
             var device = value.Deserialize<Device>(_options);
             if (device == null) return;
-            section.Table = TableType.DEVICES;
-            section.Name = device.Id;
             data.Devices[device.Id] = device;
+            await _prjStorage.UpsertRow(new DeviceRow { Name = device.Id, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelDevice)
         {
@@ -242,166 +236,131 @@ public class ProjectService : IProjectService
             if (device == null) return;
             if (device.Id == "0")
                 throw new InvalidOperationException("Internal device cannot be deleted");
-            toremove = true;
-            section.Table = TableType.DEVICES;
-            section.Name = device.Id;
             data.Devices.TryRemove(device.Id, out _);
+            await _prjStorage.DeleteRow<DeviceRow>(device.Id);
         }
         else if (cmd == ProjectDataCmdType.Charts)
         {
             var charts = value.Deserialize<List<Chart>>(_options);
             if (charts == null) return;
-            section.Table = TableType.GENERAL;
-            section.Name = cmd;
             data.Charts = charts;
+            await _prjStorage.UpsertRow(new GeneralRow { Name = cmd, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.Languages)
         {
-            section.Table = TableType.GENERAL;
-            section.Name = cmd;
             data.Languages = value.Deserialize<Languages>(_options) ?? new Languages();
+            await _prjStorage.UpsertRow(new GeneralRow { Name = cmd, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.Graphs)
         {
-            section.Table = TableType.GENERAL;
-            section.Name = cmd;
             data.Graphs = value.Deserialize<List<Graph>>(_options) ?? [];
+            await _prjStorage.UpsertRow(new GeneralRow { Name = cmd, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.ClientAccess)
         {
-            section.Table = TableType.GENERAL;
-            section.Name = cmd;
             data.ClientAccess = value.Deserialize<ClientAccess>(_options) ?? new ClientAccess();
+            await _prjStorage.UpsertRow(new GeneralRow { Name = cmd, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.SetText)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            section.Table = TableType.TEXTS;
-            section.Name = id;
             SetOrAddJsonNode(data.Texts, "id", node!);
+            await _prjStorage.UpsertRow(new TextRow { Name = id, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelText)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            toremove = true;
-            section.Table = TableType.TEXTS;
-            section.Name = id;
             RemoveJsonNode(data.Texts, "id", id);
+            await _prjStorage.DeleteRow<TextRow>(id);
         }
         else if (cmd == ProjectDataCmdType.SetAlarm)
         {
             var alarm = value.Deserialize<Alarm>(_options);
             if (alarm == null) return;
-            section.Table = TableType.ALARMS;
-            section.Name = alarm.Name;
             var idx = data.Alarms.FindIndex(a => a.Name == alarm.Name);
             if (idx >= 0) data.Alarms[idx] = alarm;
             else data.Alarms.Add(alarm);
+            await _prjStorage.UpsertRow(new ProjectAlarmRow { Name = alarm.Name, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelAlarm)
         {
             var alarm = value.Deserialize<Alarm>(_options);
             if (alarm == null) return;
-            toremove = true;
-            section.Table = TableType.ALARMS;
-            section.Name = alarm.Name;
             var idx = data.Alarms.FindIndex(a => a.Name == alarm.Name);
             if (idx >= 0) data.Alarms.RemoveAt(idx);
+            await _prjStorage.DeleteRow<ProjectAlarmRow>(alarm.Name);
         }
         else if (cmd == ProjectDataCmdType.SetNotification)
         {
             var notification = value.Deserialize<Notification>(_options);
             if (notification is null || string.IsNullOrEmpty(notification.Id)) return;
-            section.Table = TableType.NOTIFICATIONS;
-            section.Name = notification.Id;
             var idx = data.Notifications.FindIndex(n => n.Id == notification.Id);
             if (idx >= 0) data.Notifications[idx] = notification;
+            await _prjStorage.UpsertRow(new ProjectNotificationRow { Name = notification.Id, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelNotification)
         {
             var notification = value.Deserialize<Notification>(_options);
             if (notification is null || string.IsNullOrEmpty(notification.Id)) return;
-            toremove = true;
-            section.Table = TableType.NOTIFICATIONS;
-            section.Name = notification.Id;
             var idx = data.Notifications.FindIndex(n => n.Id == notification.Id);
             if (idx >= 0) data.Notifications.RemoveAt(idx);
-
+            await _prjStorage.DeleteRow<ProjectNotificationRow>(notification.Id);
         }
         else if (cmd == ProjectDataCmdType.SetScript)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            section.Table = TableType.SCRIPTS;
-            section.Name = id;
             SetOrAddJsonNode(data.Scripts, "id", node!);
+            await _prjStorage.UpsertRow(new ScriptRow { Name = id, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelScript)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            toremove = true;
-            section.Table = TableType.SCRIPTS;
-            section.Name = id;
             RemoveJsonNode(data.Scripts, "id", id);
+            await _prjStorage.DeleteRow<ScriptRow>(id);
         }
         else if (cmd == ProjectDataCmdType.SetReport)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            section.Table = TableType.REPORTS;
-            section.Name = id;
             SetOrAddJsonNode(data.Reports, "id", node!);
+            await _prjStorage.UpsertRow(new ReportRow { Name = id, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelReport)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            toremove = true;
-            section.Table = TableType.REPORTS;
-            section.Name = id;
             RemoveJsonNode(data.Reports, "id", id);
+            await _prjStorage.DeleteRow<ReportRow>(id);
         }
         else if (cmd == ProjectDataCmdType.SetMapsLocation)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            section.Table = TableType.LOCATIONS;
-            section.Name = id;
             SetOrAddJsonNode(data.MapsLocations, "id", node!);
+            await _prjStorage.UpsertRow(new LocationRow { Name = id, Value = jsonValue });
         }
         else if (cmd == ProjectDataCmdType.DelMapsLocation)
         {
             var node = ToJsonNode(value);
             var id = node?["id"]?.GetValue<string>();
             if (string.IsNullOrEmpty(id)) return;
-            toremove = true;
-            section.Table = TableType.LOCATIONS;
-            section.Name = id;
             RemoveJsonNode(data.MapsLocations, "id", id);
+            await _prjStorage.DeleteRow<LocationRow>(id);
         }
         else
         {
             _logger.LogWarning("Unknown project data cmd: {Cmd}", cmd);
-            return;
-        }
-
-        if (toremove)
-        {
-            await _prjStorage.DeleteSection(section);
-        }
-        else
-        {
-            await _prjStorage.SetSection(section);
         }
     }
 
@@ -412,22 +371,26 @@ public class ProjectService : IProjectService
         var node = ToJsonNode(projectJson);
         if (node == null) return;
 
-        var sections = new List<SqlSection>();
+        var generalRows = new List<GeneralRow>();
+        var deviceRows = new List<DeviceRow>();
+        var viewRows = new List<ViewRow>();
+        var textRows = new List<TextRow>();
+        var alarmRows = new List<ProjectAlarmRow>();
+        var notificationRows = new List<ProjectNotificationRow>();
+        var scriptRows = new List<ScriptRow>();
+        var reportRows = new List<ReportRow>();
+        var locationRows = new List<LocationRow>();
 
         // devices
         if (node["devices"] is JsonObject devicesObj)
         {
             foreach (var prop in devicesObj)
-            {
-                sections.Add(new SqlSection { Table = TableType.DEVICES, Name = prop.Key, Value = prop.Value });
-            }
+                deviceRows.Add(new DeviceRow { Name = prop.Key, Value = ProjectStorage.SerializeValue(prop.Value) });
         }
 
         // server
         if (node["server"] != null)
-        {
-            sections.Add(new SqlSection { Table = TableType.DEVICES, Name = "Server", Value = node["server"]! });
-        }
+            deviceRows.Add(new DeviceRow { Name = "Server", Value = ProjectStorage.SerializeValue(node["server"]!) });
 
         // hmi.views
         if (node["hmi"]?["views"] is JsonArray viewsArr)
@@ -436,45 +399,33 @@ public class ProjectService : IProjectService
             {
                 var id = v?["id"]?.GetValue<string>();
                 if (!string.IsNullOrEmpty(id))
-                    sections.Add(new SqlSection { Table = TableType.VIEWS, Name = id, Value = v });
+                    viewRows.Add(new ViewRow { Name = id, Value = ProjectStorage.SerializeValue(v) });
             }
         }
 
         // hmi.layout
         if (node["hmi"]?["layout"] != null)
-        {
-            sections.Add(new SqlSection { Table = TableType.GENERAL, Name = ProjectDataCmdType.HmiLayout, Value = node["hmi"]!["layout"]! });
-        }
+            generalRows.Add(new GeneralRow { Name = ProjectDataCmdType.HmiLayout, Value = ProjectStorage.SerializeValue(node["hmi"]!["layout"]!) });
 
         // hmi.mobileLayout
         if (node["hmi"]?["mobileLayout"] != null)
-        {
-            sections.Add(new SqlSection { Table = TableType.GENERAL, Name = ProjectDataCmdType.MobileLayout, Value = node["hmi"]!["mobileLayout"]! });
-        }
+            generalRows.Add(new GeneralRow { Name = ProjectDataCmdType.MobileLayout, Value = ProjectStorage.SerializeValue(node["hmi"]!["mobileLayout"]!) });
 
         // charts
         if (node["charts"] != null)
-        {
-            sections.Add(new SqlSection { Table = TableType.GENERAL, Name = ProjectDataCmdType.Charts, Value = node["charts"]! });
-        }
+            generalRows.Add(new GeneralRow { Name = ProjectDataCmdType.Charts, Value = ProjectStorage.SerializeValue(node["charts"]!) });
 
         // graphs
         if (node["graphs"] != null)
-        {
-            sections.Add(new SqlSection { Table = TableType.GENERAL, Name = ProjectDataCmdType.Graphs, Value = node["graphs"]! });
-        }
+            generalRows.Add(new GeneralRow { Name = ProjectDataCmdType.Graphs, Value = ProjectStorage.SerializeValue(node["graphs"]!) });
 
         // languages
         if (node["languages"] != null)
-        {
-            sections.Add(new SqlSection { Table = TableType.GENERAL, Name = ProjectDataCmdType.Languages, Value = node["languages"]! });
-        }
+            generalRows.Add(new GeneralRow { Name = ProjectDataCmdType.Languages, Value = ProjectStorage.SerializeValue(node["languages"]!) });
 
         // version
         if (node["version"] != null)
-        {
-            sections.Add(new SqlSection { Table = TableType.GENERAL, Name = "Version", Value = node["version"]! });
-        }
+            generalRows.Add(new GeneralRow { Name = "Version", Value = ProjectStorage.SerializeValue(node["version"]!) });
 
         // texts
         if (node["texts"] is JsonArray textsArr)
@@ -483,7 +434,7 @@ public class ProjectService : IProjectService
             {
                 var id = t?["id"]?.GetValue<string>();
                 if (!string.IsNullOrEmpty(id))
-                    sections.Add(new SqlSection { Table = TableType.TEXTS, Name = id, Value = t });
+                    textRows.Add(new TextRow { Name = id, Value = ProjectStorage.SerializeValue(t) });
             }
         }
 
@@ -494,7 +445,7 @@ public class ProjectService : IProjectService
             {
                 var name = a?["name"]?.GetValue<string>();
                 if (!string.IsNullOrEmpty(name))
-                    sections.Add(new SqlSection { Table = TableType.ALARMS, Name = name, Value = a });
+                    alarmRows.Add(new ProjectAlarmRow { Name = name, Value = ProjectStorage.SerializeValue(a) });
             }
         }
 
@@ -505,7 +456,7 @@ public class ProjectService : IProjectService
             {
                 var id = n?["id"]?.GetValue<string>();
                 if (!string.IsNullOrEmpty(id))
-                    sections.Add(new SqlSection { Table = TableType.NOTIFICATIONS, Name = id, Value = n });
+                    notificationRows.Add(new ProjectNotificationRow { Name = id, Value = ProjectStorage.SerializeValue(n) });
             }
         }
 
@@ -516,7 +467,7 @@ public class ProjectService : IProjectService
             {
                 var id = s?["id"]?.GetValue<string>();
                 if (!string.IsNullOrEmpty(id))
-                    sections.Add(new SqlSection { Table = TableType.SCRIPTS, Name = id, Value = s });
+                    scriptRows.Add(new ScriptRow { Name = id, Value = ProjectStorage.SerializeValue(s) });
             }
         }
 
@@ -527,7 +478,7 @@ public class ProjectService : IProjectService
             {
                 var id = r?["id"]?.GetValue<string>();
                 if (!string.IsNullOrEmpty(id))
-                    sections.Add(new SqlSection { Table = TableType.REPORTS, Name = id, Value = r });
+                    reportRows.Add(new ReportRow { Name = id, Value = ProjectStorage.SerializeValue(r) });
             }
         }
 
@@ -538,17 +489,23 @@ public class ProjectService : IProjectService
             {
                 var id = l?["id"]?.GetValue<string>();
                 if (!string.IsNullOrEmpty(id))
-                    sections.Add(new SqlSection { Table = TableType.LOCATIONS, Name = id, Value = l });
+                    locationRows.Add(new LocationRow { Name = id, Value = ProjectStorage.SerializeValue(l) });
             }
         }
 
         // timestamp
-        sections.Add(new SqlSection { Table = TableType.GENERAL, Name = "timestamp", Value = DateTime.Now.ToString("yyyy/M/d HH:mm:ss") });
+        generalRows.Add(new GeneralRow { Name = "timestamp", Value = $"\"{DateTime.Now:yyyy/M/d HH:mm:ss}\"" });
 
-        if (sections.Count > 0)
-        {
-            await _prjStorage.SetSections(sections);
-        }
+        // Batch upsert all tables
+        await _prjStorage.UpsertRows(generalRows);
+        await _prjStorage.UpsertRows(deviceRows);
+        await _prjStorage.UpsertRows(viewRows);
+        await _prjStorage.UpsertRows(textRows);
+        await _prjStorage.UpsertRows(alarmRows);
+        await _prjStorage.UpsertRows(notificationRows);
+        await _prjStorage.UpsertRows(scriptRows);
+        await _prjStorage.UpsertRows(reportRows);
+        await _prjStorage.UpsertRows(locationRows);
 
         await Load();
     }
